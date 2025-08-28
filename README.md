@@ -62,16 +62,10 @@ atc-voice-dashboard/
 --
 python3 -m venv venv
 source venv/bin/activate   # On macOS/Linux
+
 venv\Scripts\activate      # On Windows
 
 --
-
-## Install dependencies:
-
-
-pip install -r requirements.txt
---
-
 🧰 Tech Stack
 Programming: Python
 
