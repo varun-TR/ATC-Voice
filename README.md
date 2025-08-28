@@ -66,8 +66,6 @@ source venv/bin/activate   # On macOS/Linux
 venv\Scripts\activate      # On Windows
 
 
---
-
 ## 🧰 Tech Stack
 
 Programming: Python
@@ -84,9 +82,9 @@ Data Handling: Pandas, NumPy
 
 Optional Deployment: Docker (TBD)
 
----
 
-📊 Deliverables
+## 📊 Deliverables
+
 ✅ Final Project Report
 
 ✅ Capstone Showcase Presentation
