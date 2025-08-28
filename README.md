@@ -1,25 +1,18 @@
 # ATC-Voice
 
-Project Overview: ATC voice → text → analysis → dashboard.
+atc-voice-dashboard/
+│── README.md
+│── .gitignore
+│── requirements.txt      # Python dependencies
+│── src/                  # Core source code
+│   ├── data_ingestion/   # Scripts to fetch/stream ATC audio (LiveATC, etc.)
+│   ├── preprocessing/    # Audio cleaning, segmentation
+│   ├── speech_to_text/   # STT pipeline (Whisper, Vosk, or Azure Speech SDK)
+│   ├── nlp_analysis/     # Keyword spotting, topic modeling, anomaly detection
+│   ├── dashboard/        # Streamlit/Dash app for visualization
+│   └── utils/            # Helper functions (logging, config)
+│── notebooks/            # Jupyter/EDA experiments
+│── data/                 # Sample data (small clips, transcripts)
+│── tests/                # Unit tests
+│── docs/                 # Project docs & capstone deliverables
 
-Data Source: LiveATC (or provided sample recordings).
-
-Pipeline:
-
-Ingest audio
-
-Clean & preprocess
-
-Convert speech → text (STT model)
-
-NLP analysis (e.g., call signs, commands, alerts)
-
-Dashboard visualization (flight timeline, sentiment, anomalies)
-
-Tech Stack:
-
-Python (data pipelines, STT, NLP)
-
-Streamlit or Dash (dashboard)
-
-How to Run: pip install -r requirements.txt && streamlit run src/dashboard/app.py
