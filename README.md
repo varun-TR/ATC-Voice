@@ -59,13 +59,15 @@ atc-voice-dashboard/
    cd atc-voice-dashboard
    
 ## Create a virtual environment & activate it:
---
+
 python3 -m venv venv
 source venv/bin/activate   # On macOS/Linux
 
 venv\Scripts\activate      # On Windows
 
+
 --
+
 🧰 Tech Stack
 Programming: Python
 
