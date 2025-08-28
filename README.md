@@ -95,6 +95,7 @@ Optional Deployment: Docker (TBD)
 
 --
 
-📜 License
+## 📜 License
+
 This project is released under the Apache 2.0 License unless otherwise specified by the partner.
 
