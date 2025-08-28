@@ -68,7 +68,8 @@ venv\Scripts\activate      # On Windows
 
 --
 
-🧰 Tech Stack
+## 🧰 Tech Stack
+
 Programming: Python
 
 Audio Processing: pydub, librosa (TBD)
