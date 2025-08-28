@@ -26,7 +26,7 @@ atc-voice-dashboard/
 
 │── requirements.txt # Python dependencies
 
-│── src/ # Core source code
+│── src/ 
 
 │ ├── data_ingestion/ # Scripts to fetch/stream ATC audio (LiveATC, etc.)
 
