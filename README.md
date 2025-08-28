@@ -51,56 +51,43 @@ atc-voice-dashboard/
 
 ---
 
----
-
 ## ⚙️ Installation
 
 1. Clone the repository:
    ```bash
    git clone https://github.com/<your-username>/atc-voice-dashboard.git
    cd atc-voice-dashboard
-Create a virtual environment & activate it:
-
-bash
-Copy code
+   
+## Create a virtual environment & activate it:
+--
 python3 -m venv venv
 source venv/bin/activate   # On macOS/Linux
 venv\Scripts\activate      # On Windows
-Install dependencies:
 
-bash
-Copy code
+--
+
+## Install dependencies:
+
+
 pip install -r requirements.txt
-🚀 Usage
-Run the dashboard:
-
-bash
-Copy code
-streamlit run src/dashboard/app.py
-Explore features:
-
-Live/recorded audio ingestion
-
-Real-time transcripts
-
-NLP-based insights
-
-Visual analytics for ATC communication
+--
 
 🧰 Tech Stack
 Programming: Python
 
-Audio Processing: pydub, librosa
+Audio Processing: pydub, librosa (TBD)
 
-Speech-to-Text: OpenAI Whisper / Vosk / Azure Speech SDK
+Speech-to-Text: OpenAI Whisper / Vosk / Azure Speech SDK (TBD)
 
-NLP: Hugging Face Transformers, spaCy
+NLP: Hugging Face Transformers, spaCy (TBD)
 
-Dashboard: Streamlit / Dash / Plotly
+Dashboard: Streamlit / Dash / Plotly (TBD)
 
 Data Handling: Pandas, NumPy
 
-Optional Deployment: Docker
+Optional Deployment: Docker (TBD)
+
+---
 
 📊 Deliverables
 ✅ Final Project Report
@@ -110,6 +97,8 @@ Optional Deployment: Docker
 ✅ GitHub Repository (this repo)
 
 ✅ Working Dashboard Prototype
+
+--
 
 📜 License
 This project is released under the Apache 2.0 License unless otherwise specified by the partner.
