@@ -1,25 +1,103 @@
-# ATC-Voice
-
 # 🛫 ATC Voice Communications Dashboard (Voice-to-Text)
-## 📌 Project Overview
 
-This project is part of the GMU DAEN Capstone (Fall 2025) and focuses on building an Air Traffic Control (ATC) Voice Communications Dashboard.
+## 📌 Project Overview
+This project is part of the **GMU DAEN Capstone (Fall 2025)** and focuses on building an **Air Traffic Control (ATC) Voice Communications Dashboard**.  
 The system ingests live or recorded ATC audio, converts it into text using Speech-to-Text (STT) models, applies Natural Language Processing (NLP) for analysis, and visualizes insights in an interactive dashboard.
 
-🎯 Objectives
+---
 
-Ingest and process ATC audio recordings (e.g., LiveATC streams).
+## 🎯 Objectives
+- Ingest and process **ATC audio recordings** (e.g., LiveATC streams).  
+- Apply **Speech-to-Text (STT)** models such as Whisper, Vosk, or Azure Speech SDK.  
+- Perform **NLP analysis** (keyword spotting, call sign detection, anomaly detection).  
+- Develop a **real-time dashboard** to visualize:
+  - Transcripts
+  - Communication timelines
+  - Flight activity summaries
+  - Alerts/anomalies  
 
-Apply Speech-to-Text (STT) models such as Whisper, Vosk, or Azure Speech SDK.
+---
 
-Perform NLP analysis (e.g., keyword spotting, call sign detection, anomaly detection).
+## 🏗️ Repository Structure
+atc-voice-dashboard/
+│── README.md
+│── .gitignore
+│── requirements.txt # Python dependencies
+│── src/ # Core source code
+│ ├── data_ingestion/ # Scripts to fetch/stream ATC audio (LiveATC, etc.)
+│ ├── preprocessing/ # Audio cleaning, segmentation
+│ ├── speech_to_text/ # STT pipeline (Whisper, Vosk, or Azure Speech SDK)
+│ ├── nlp_analysis/ # Keyword spotting, topic modeling, anomaly detection
+│ ├── dashboard/ # Streamlit/Dash app for visualization
+│ └── utils/ # Helper functions (logging, config)
+│── notebooks/ # Jupyter/EDA experiments
+│── data/ # Sample data (small clips, transcripts)
+│── tests/ # Unit tests
+│── docs/ # Project docs & capstone deliverables
 
-Develop a real-time dashboard to visualize:
 
-Transcripts
+---
 
-Communication timelines
+---
 
-Flight activity summaries
+## ⚙️ Installation
 
-Alerts/anomalies
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/<your-username>/atc-voice-dashboard.git
+   cd atc-voice-dashboard
+Create a virtual environment & activate it:
+
+bash
+Copy code
+python3 -m venv venv
+source venv/bin/activate   # On macOS/Linux
+venv\Scripts\activate      # On Windows
+Install dependencies:
+
+bash
+Copy code
+pip install -r requirements.txt
+🚀 Usage
+Run the dashboard:
+
+bash
+Copy code
+streamlit run src/dashboard/app.py
+Explore features:
+
+Live/recorded audio ingestion
+
+Real-time transcripts
+
+NLP-based insights
+
+Visual analytics for ATC communication
+
+🧰 Tech Stack
+Programming: Python
+
+Audio Processing: pydub, librosa
+
+Speech-to-Text: OpenAI Whisper / Vosk / Azure Speech SDK
+
+NLP: Hugging Face Transformers, spaCy
+
+Dashboard: Streamlit / Dash / Plotly
+
+Data Handling: Pandas, NumPy
+
+Optional Deployment: Docker
+
+📊 Deliverables
+✅ Final Project Report
+
+✅ Capstone Showcase Presentation
+
+✅ GitHub Repository (this repo)
+
+✅ Working Dashboard Prototype
+
+📜 License
+This project is released under the Apache 2.0 License unless otherwise specified by the partner.
+
