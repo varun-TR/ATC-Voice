@@ -93,8 +93,6 @@ Optional Deployment: Docker (TBD)
 
 ✅ Working Dashboard Prototype
 
---
-
 ## 📜 License
 
 This project is released under the Apache 2.0 License unless otherwise specified by the partner.
