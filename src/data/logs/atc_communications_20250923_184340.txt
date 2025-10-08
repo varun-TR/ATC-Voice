@@ -1,0 +1,15 @@
+[2025-09-23 18:43:40] Starting to monitor LiveATC stream at http://d.liveatc.net/zbw_ron4...
+[2025-09-23 18:43:40] Log file: /home/atc_voice/ATC-Voice/src/data/logs/atc_communications_20250923_184340.txt
+[2025-09-23 18:43:40] Established session with LiveATC site.
+[2025-09-23 18:43:46] Successfully connected to stream. Monitoring for communications...
+[2025-09-23 18:43:46] Silence threshold: -38 dB
+[2025-09-23 18:43:46] Press Ctrl+C to stop monitoring
+[2025-09-23 18:43:46] 
+[2025-09-23 18:44:17] 🎙️  Communication detected (dBFS: -24.9)
+[2025-09-23 18:44:19] 🎙️  Communication detected (dBFS: -28.2)
+[2025-09-23 18:44:28] 🎙️  Communication detected (dBFS: -25.0)
+[2025-09-23 18:44:30] 🎙️  Communication detected (dBFS: -25.2)
+[2025-09-23 18:44:32] 🎙️  Communication detected (dBFS: -20.9)
+[2025-09-23 18:44:34] 🛑 Stopped monitoring LiveATC stream.
+[2025-09-23 18:44:34] Monitoring ended.
+[2025-09-23 18:44:34] Complete log saved to: /home/atc_voice/ATC-Voice/src/data/logs/atc_communications_20250923_184340.txt
