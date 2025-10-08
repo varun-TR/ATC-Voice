@@ -5,54 +5,82 @@ import queue
 from datetime import datetime, timezone
 from pydub import AudioSegment
 import io
-import os
 from pathlib import Path
+from collections import deque
 
-class LiveAudioStreamSplitter:
-    def __init__(self, stream_url="http://d.liveatc.net/zbw_ron4", chunk_duration=30, local_dir=None):
+class SlidingWindowAudioSplitter:
+    def __init__(self, stream_url="http://d.liveatc.net/zbw_ron4", 
+                 chunk_duration=30, overlap_duration=5, local_dir=None):
         self.stream_url = stream_url
-        self.chunk_duration = chunk_duration
+        self.chunk_duration = chunk_duration  # 30 seconds
+        self.overlap_duration = overlap_duration  # 5 seconds
+        self.slide_interval = chunk_duration - overlap_duration  # 25 seconds
         self.is_recording = False
-        self.audio_queue = queue.Queue()
-
-        # Set local directory - default to ATC-Voice/src/data/raw
+        self.audio_buffer = deque()  # Rolling buffer for sliding window
+        self.buffer_lock = threading.Lock()
+        
+        # Set local directory
         if local_dir:
-            self.local_dir = Path(local_dir)
+            # Set local directory to ATC-Voice/src/data/raw
+            self.local_dir = Path("ATC-Voice/src/data/raw")
         else:
-            # Try to find ATC-Voice directory structure
             current_dir = Path.cwd()
             if "ATC-Voice" in str(current_dir):
-                # We're somewhere in the ATC-Voice project
                 atc_voice_root = current_dir
                 while atc_voice_root.name != "ATC-Voice" and atc_voice_root.parent != atc_voice_root:
                     atc_voice_root = atc_voice_root.parent
                 self.local_dir = atc_voice_root / "src" / "data" / "raw"
             else:
-                # Default fallback
                 self.local_dir = Path("ATC-Voice/src/data/raw")
+        
+        self.local_dir.mkdir(parents=True, exist_ok=True)
+        print(f"✅ Sliding window setup: {chunk_duration}s chunks, {overlap_duration}s overlap")
+        print(f"📁 Local directory: {self.local_dir.absolute()}")
 
-        # Create directory if it doesn't exist
-        try:
-            self.local_dir.mkdir(parents=True, exist_ok=True)
-            print(f"✅ Local directory ready: {self.local_dir.absolute()}")
-        except Exception as e:
-            raise RuntimeError(f"❌ Failed to create local directory '{self.local_dir}': {e}")
+    def add_to_buffer(self, audio_data, timestamp):
+        """Add audio data to the sliding buffer."""
+        with self.buffer_lock:
+            self.audio_buffer.append((audio_data, timestamp))
+            # Keep buffer size reasonable (enough for chunk_duration + some extra)
+            max_buffer_items = int((self.chunk_duration + 10) * 10)  # ~10 items per second
+            while len(self.audio_buffer) > max_buffer_items:
+                self.audio_buffer.popleft()
 
-    def save_chunk(self, chunk_data, chunk_number):
-        """Save audio chunk to local directory."""
+    def extract_window_audio(self, end_time):
+        """Extract audio for a specific time window."""
+        start_time = end_time - self.chunk_duration
+        window_audio = b""
+        
+        with self.buffer_lock:
+            for audio_data, timestamp in self.audio_buffer:
+                if start_time <= timestamp <= end_time:
+                    window_audio += audio_data
+        
+        return window_audio
+
+    def save_chunk(self, chunk_data, chunk_number, window_start, window_end):
+        """Save audio chunk with sliding window metadata."""
         try:
             timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-            filename = f"live_stream_chunk_{chunk_number:03d}_{timestamp}.wav"
+            # Include window timing in filename
+            start_str = datetime.fromtimestamp(window_start).strftime("%H%M%S")
+            end_str = datetime.fromtimestamp(window_end).strftime("%H%M%S")
+            filename = f"atc_sliding_{chunk_number:03d}_{start_str}-{end_str}_{timestamp}.wav"
             filepath = self.local_dir / filename
 
-            # Convert incoming MP3 bytes → WAV 16k mono PCM16
+            if len(chunk_data) < 1000:  # Skip tiny chunks
+                return None
+
+            # Convert MP3 → WAV 16k mono PCM16
             audio = AudioSegment.from_file(io.BytesIO(chunk_data), format="mp3")
             audio = audio.set_channels(1).set_frame_rate(16000).set_sample_width(2)
-
-            # Export directly to file
+            
+            # Export to file
             audio.export(str(filepath), format="wav")
             
-            print(f"💾 Saved locally: {filepath}")
+            duration = len(audio) / 1000.0  # seconds
+            overlap_info = f"(5s overlap)" if chunk_number > 1 else "(no overlap)"
+            print(f"💾 Saved: {filename} | Duration: {duration:.1f}s {overlap_info}")
             return filename
 
         except Exception as e:
@@ -60,10 +88,10 @@ class LiveAudioStreamSplitter:
             return None
 
     def download_stream(self):
-        """Download live audio stream and put chunks in queue."""
+        """Download live audio stream and buffer it."""
         try:
             print(f"🌐 Connecting to stream: {self.stream_url}")
-
+            
             headers = {
                 'User-Agent': 'Mozilla/5.0',
                 'Accept': 'audio/*;q=0.9,*/*;q=0.5',
@@ -72,65 +100,67 @@ class LiveAudioStreamSplitter:
 
             response = requests.get(self.stream_url, stream=True, timeout=30, headers=headers)
             response.raise_for_status()
-
-            print("✅ Connected to stream successfully!")
-            print("🎵 Recording audio...")
-
-            chunk_data = b""
-            chunk_start_time = time.time()
-
-            for chunk in response.iter_content(chunk_size=8192):
+            
+            print("✅ Connected! Buffering audio for sliding windows...")
+            
+            for chunk in response.iter_content(chunk_size=4096):
                 if not self.is_recording:
                     break
-
+                
                 if chunk:
-                    chunk_data += chunk
                     current_time = time.time()
+                    self.add_to_buffer(chunk, current_time)
 
-                    if current_time - chunk_start_time >= self.chunk_duration:
-                        if len(chunk_data) > 1000:
-                            self.audio_queue.put(chunk_data)
-                        chunk_data = b""
-                        chunk_start_time = current_time
-
-        except requests.exceptions.RequestException as e:
-            print(f"❌ Error connecting to stream: {e}")
         except Exception as e:
-            print(f"❌ Error downloading stream: {e}")
+            print(f"❌ Stream error: {e}")
 
-    def save_chunks(self):
-        """Save audio chunks from queue to local directory."""
+    def sliding_window_processor(self):
+        """Process sliding windows every 25 seconds."""
         chunk_number = 1
-        while self.is_recording or not self.audio_queue.empty():
-            try:
-                chunk_data = self.audio_queue.get(timeout=1)
-                if chunk_data:
-                    filename = self.save_chunk(chunk_data, chunk_number)
-                    if filename:
-                        size_mb = len(chunk_data) / (1024 * 1024)
-                        print(f"📁 Saved: {filename} ({size_mb:.2f} MB)")
-                        chunk_number += 1
-            except queue.Empty:
-                continue
-            except Exception as e:
-                print(f"❌ Error saving chunk {chunk_number}: {e}")
+        last_window_time = time.time()
+        
+        # Wait for initial buffer to fill
+        time.sleep(self.chunk_duration + 2)
+        
+        while self.is_recording:
+            current_time = time.time()
+            
+            if current_time - last_window_time >= self.slide_interval:
+                window_end = current_time
+                window_start = window_end - self.chunk_duration
+                
+                # Extract audio for this window
+                window_audio = self.extract_window_audio(window_end)
+                
+                if window_audio:
+                    self.save_chunk(window_audio, chunk_number, window_start, window_end)
+                    chunk_number += 1
+                
+                last_window_time = current_time
+            
+            time.sleep(1)  # Check every second
 
     def start_recording(self, duration_minutes=None):
-        """Start recording the live stream."""
-        print("🚀 Starting Live Audio Stream Splitter...")
-        print("=" * 60)
+        """Start recording with sliding windows."""
+        print("🚀 Starting Sliding Window ATC Audio Splitter...")
+        print("=" * 70)
         print(f"🌐 Stream URL: {self.stream_url}")
         print(f"📁 Local Directory: {self.local_dir.absolute()}")
-        print(f"⏱️  Target chunk duration: ~{self.chunk_duration} seconds each")
+        print(f"⏱️  Chunk duration: {self.chunk_duration} seconds")
+        print(f"🔄 Overlap duration: {self.overlap_duration} seconds")
+        print(f"⏭️  New chunk every: {self.slide_interval} seconds")
         if duration_minutes:
             print(f"⏰ Recording duration: {duration_minutes} minutes")
-        print("=" * 60)
+        print("=" * 70)
 
         self.is_recording = True
+        
+        # Start background threads
         download_thread = threading.Thread(target=self.download_stream, daemon=True)
-        save_thread = threading.Thread(target=self.save_chunks, daemon=True)
+        processor_thread = threading.Thread(target=self.sliding_window_processor, daemon=True)
+        
         download_thread.start()
-        save_thread.start()
+        processor_thread.start()
 
         try:
             if duration_minutes:
@@ -139,7 +169,7 @@ class LiveAudioStreamSplitter:
                 self.is_recording = False
                 print("⏰ Recording time completed!")
             else:
-                print("🎵 Recording... Press Ctrl+C to stop")
+                print("🎵 Recording with sliding windows... Press Ctrl+C to stop")
                 while self.is_recording:
                     time.sleep(1)
         except KeyboardInterrupt:
@@ -147,53 +177,28 @@ class LiveAudioStreamSplitter:
             self.is_recording = False
 
         download_thread.join(timeout=5)
-        save_thread.join(timeout=5)
-        print("✅ Recording completed!")
+        processor_thread.join(timeout=5)
+        print("✅ Sliding window recording completed!")
         print(f"📁 Audio files saved to: {self.local_dir.absolute()}")
 
 
-def parse_playlist_file(playlist_path):
-    """Parse PLS playlist file and extract stream URL."""
-    try:
-        with open(playlist_path, 'r') as f:
-            content = f.read()
-        for line in content.split('\n'):
-            if line.startswith('File1='):
-                return line.split('=', 1)[1].strip()
-        return None
-    except Exception as e:
-        print(f"❌ Error parsing playlist file: {e}")
-        return None
-
-
 def main():
-    print("🌐 ATC Audio Stream to Local Storage")
+    print("🌐 ATC Sliding Window Audio Splitter")
     print("=" * 50)
-    print("Stream: http://d.liveatc.net/zbw_ron4 (NY Center Sector 9, Westminster High)")
-    
-    # Show where files will be stored
-    current_dir = Path.cwd()
-    if "ATC-Voice" in str(current_dir):
-        atc_voice_root = current_dir
-        while atc_voice_root.name != "ATC-Voice" and atc_voice_root.parent != atc_voice_root:
-            atc_voice_root = atc_voice_root.parent
-        local_dir = atc_voice_root / "src" / "data" / "raw"
-    else:
-        local_dir = Path("ATC-Voice/src/data/raw")
-    
-    print(f"Local Directory: {local_dir.absolute()}")
-    print("Chunk Duration: 30 seconds")
+    print("Stream: NY Center Sector 9, Westminster High")
+    print("Window: 30-second chunks with 5-second overlap")
+    print("Output: New file every 25 seconds")
     print("=" * 50)
 
-    # Initialize splitter with default settings
     try:
-        splitter = LiveAudioStreamSplitter()
+        # 30-second chunks, 5-second overlap, new chunk every 25 seconds
+        splitter = SlidingWindowAudioSplitter(
+            chunk_duration=30,
+            overlap_duration=5
+        )
+        splitter.start_recording()
     except Exception as e:
         print(f"❌ Failed to initialize: {e}")
-        return
-
-    # Start recording continuously
-    splitter.start_recording()
 
 
 if __name__ == "__main__":
