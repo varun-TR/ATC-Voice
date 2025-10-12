@@ -28,7 +28,7 @@ HEADERS = {
 }
 
 def setup_log_file():
-    """Setup log file in ATC-Voice/src/data/logs directory."""
+    """Setup log file in ATC-Voice/src/data/logs directory with fixed filename."""
     # Set log directory - default to ATC-Voice/src/data/logs
     current_dir = Path.cwd()
     if "ATC-Voice" in str(current_dir):
@@ -44,9 +44,8 @@ def setup_log_file():
     # Create directory if it doesn't exist
     log_dir.mkdir(parents=True, exist_ok=True)
     
-    # Create log filename with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_filename = f"atc_communications_{timestamp}.txt"
+    # Use fixed log filename
+    log_filename = "atc_communications.txt"
     log_filepath = log_dir / log_filename
     
     return log_filepath
@@ -62,6 +61,19 @@ def log_message(log_file, message, also_print=False):
     if also_print:
         print(f"[{timestamp}] {message}")
 
+def check_existing_log(log_filepath):
+    """Check if log file exists and return status."""
+    if log_filepath.exists():
+        file_size = log_filepath.stat().st_size
+        with open(log_filepath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            line_count = len(lines)
+            # Get last few lines for preview
+            last_lines = lines[-3:] if len(lines) >= 3 else lines
+        
+        return True, file_size, line_count, last_lines
+    return False, 0, 0, []
+
 def is_communication_detected(audio_segment):
     """Detect communication if audio loudness exceeds threshold."""
     if not audio_segment:
@@ -72,6 +84,24 @@ def stream_and_detect_communications(stream_url):
     """Stream audio and detect communications - logging to file."""
     # Setup log file
     log_filepath = setup_log_file()
+    
+    # Check if continuing from existing log
+    exists, file_size, line_count, last_lines = check_existing_log(log_filepath)
+    
+    if exists:
+        print(f"📄 Found existing log file: {log_filepath.name}")
+        print(f"   Size: {file_size:,} bytes | Lines: {line_count:,}")
+        print(f"   Last entries:")
+        for line in last_lines:
+            print(f"   {line.rstrip()}")
+        print(f"\n✅ Continuing from where we left off...\n")
+        
+        # Add separator to show new session
+        log_message(log_filepath, "="*60)
+        log_message(log_filepath, f"NEW SESSION STARTED - Continuing monitoring")
+        log_message(log_filepath, "="*60)
+    else:
+        print(f"📝 Creating new log file: {log_filepath.name}\n")
     
     # Initial log entries
     log_message(log_filepath, f"Starting to monitor LiveATC stream at {stream_url}...", True)
@@ -142,6 +172,13 @@ def stream_and_detect_communications(stream_url):
     finally:
         log_message(log_filepath, "Monitoring ended.", True)
         log_message(log_filepath, f"Complete log saved to: {log_filepath.absolute()}", True)
+        
+        # Print final statistics
+        exists, file_size, line_count, _ = check_existing_log(log_filepath)
+        if exists:
+            print(f"\n📊 Final Statistics:")
+            print(f"   Total log size: {file_size:,} bytes")
+            print(f"   Total log lines: {line_count:,}")
 
 if __name__ == "__main__":
     print("LiveATC Communication Detection Monitor")

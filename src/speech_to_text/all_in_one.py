@@ -12,7 +12,6 @@ import sys
 import requests
 import numpy as np
 import librosa
-import noisereduce as nr
 from datetime import datetime, timezone
 from faster_whisper import WhisperModel
 from pathlib import Path
@@ -218,14 +217,6 @@ class TranscriptionEngine:
         y, sr = librosa.load(path, sr=self.sr, mono=True)
         return y.astype(np.float32)
     
-    def _denoise_stationary(self, y: np.ndarray) -> np.ndarray:
-        n = int(0.5 * self.sr)
-        noise_clip = y[:n] if y.size > n else y
-        return nr.reduce_noise(y=y, y_noise=noise_clip, sr=self.sr, stationary=True)
-    
-    def _denoise_spectral(self, y: np.ndarray) -> np.ndarray:
-        return nr.reduce_noise(y=y, sr=self.sr)
-    
     def _transcribe_array(self, y: np.ndarray):
         segments, info = self.model.transcribe(y, language="en", beam_size=5)
         text = "".join(seg.text for seg in segments)
@@ -248,21 +239,13 @@ class TranscriptionEngine:
                 audio = self._load_audio(filepath)
                 raw_transcript, raw_duration = self._transcribe_array(audio)
                 
-                y_stat = self._denoise_stationary(audio)
-                stat_transcript, _ = self._transcribe_array(y_stat)
-                
-                y_spec = self._denoise_spectral(audio)
-                spec_transcript, _ = self._transcribe_array(y_spec)
-                
                 chunk_number = len(self.results['items']) + 1
                 item = {
                     "chunk_number": chunk_number,
                     "audio_file_raw": filepath,
                     "raw_duration_s": round(raw_duration, 2),
                     "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-                    "raw_transcription": raw_transcript,
-                    "stationary_transcription": stat_transcript,
-                    "spectral_transcription": spec_transcript
+                    "raw_transcription": raw_transcript
                 }
                 
                 self.results["items"].append(item)
