@@ -36,8 +36,9 @@ atc-voice-dashboard/
 
 │ ├── nlp_analysis/ # Keyword spotting, topic modeling, anomaly detection
 
-│ ├── dashboard/ # Streamlit/Dash app for visualization
-
+│ ├── dashboard/ # Streamlit app for visualization
+│ │   └── app.py
+│ ├── pipeline/  # Simple, stable API for processing modules (re-exports)
 │ └── utils/ # Helper functions (logging, config)
 
 │── notebooks/ # Jupyter/EDA experiments
@@ -76,7 +77,7 @@ Speech-to-Text: OpenAI Whisper / Vosk / Azure Speech SDK (TBD)
 
 NLP: Hugging Face Transformers, spaCy (TBD)
 
-Dashboard: Streamlit / Dash / Plotly (TBD)
+Dashboard: Streamlit
 
 Data Handling: Pandas, NumPy
 
@@ -92,6 +93,17 @@ Optional Deployment: Docker (TBD)
 ✅ GitHub Repository (this repo)
 
 ✅ Working Dashboard Prototype
+Run the dashboard locally:
+
+```bash
+python -m pip install -r requirements.txt
+python -m pip install streamlit
+streamlit run src/dashboard/app.py
+```
+
+The dashboard expects either:
+- `src/data/logs/categorized/categorized_with_callsign.json` (preferred), or
+- `src/data/logs/transcripts/transcription_results.json`.
 
 ## 📜 License
 
