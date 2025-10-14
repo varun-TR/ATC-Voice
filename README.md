@@ -93,17 +93,42 @@ Optional Deployment: Docker (TBD)
 ✅ GitHub Repository (this repo)
 
 ✅ Working Dashboard Prototype
-Run the dashboard locally:
 
+## 🚀 Quick Start
+
+**Run the dashboard with your existing data:**
 ```bash
-python -m pip install -r requirements.txt
-python -m pip install streamlit
+./run_dashboard_simple.sh
+```
+
+This will:
+- ✅ Use your existing transcription data (`categorized_transcription_results.json`)
+- ✅ Use your existing communication logs (`atc_communications.txt`)
+- ✅ Display live analytics and visualizations
+- ✅ Show all requested features: categorization, daily counts, statistics, patterns
+
+**Or manually:**
+```bash
+# Activate virtual environment
+source venv/bin/activate
+
+# Install dependencies if needed
+pip install streamlit pandas numpy plotly
+
+# Run dashboard
 streamlit run src/dashboard/app.py
 ```
 
-The dashboard expects either:
-- `src/data/logs/categorized/categorized_with_callsign.json` (preferred), or
-- `src/data/logs/transcripts/transcription_results.json`.
+**Access:** http://localhost:8501
+
+## 📊 Dashboard Features
+
+The dashboard displays:
+- **Communication Categorization**: Frequency handoffs, heading vectors, altitude clearances, emergency declarations, miscellaneous
+- **Daily Analytics**: Communication counts, statistics, trends
+- **Category Analysis**: Distribution charts and breakdowns
+- **Pattern Analysis**: Hourly patterns, flight activity, timing analysis
+- **Live Data**: Reads from your existing data files automatically
 
 ## 📜 License
 
