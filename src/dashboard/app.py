@@ -7,8 +7,11 @@ from datetime import datetime, timedelta
 import json
 import re
 import time
+import shutil
+import psutil
 from pathlib import Path
 from typing import List, Dict, Any, Optional
+from functools import lru_cache
 
 # Set page config
 st.set_page_config(
@@ -23,6 +26,7 @@ BASE_DIR = Path(".")
 TRANSCRIPTIONS_FILE = BASE_DIR / "src" / "data" / "logs" / "transcripts" / "categorized_transcription_results.json"
 COMMUNICATIONS_FILE = BASE_DIR / "src" / "data" / "logs" / "atc_communications.txt"
 
+@st.cache_data(ttl=10)  # Reduced cache for 10 seconds for better responsiveness
 def load_transcription_data() -> Optional[pd.DataFrame]:
     """Load and parse transcription data from JSON file."""
     try:
@@ -52,6 +56,7 @@ def load_transcription_data() -> Optional[pd.DataFrame]:
         st.error(f"Error loading transcription data: {e}")
         return None
 
+@st.cache_data(ttl=10)  # Reduced cache for 10 seconds for better responsiveness
 def load_communication_logs() -> Optional[pd.DataFrame]:
     """Load and parse communication detection logs."""
     try:
@@ -103,8 +108,113 @@ def load_communication_logs() -> Optional[pd.DataFrame]:
         st.error(f"Error loading communication logs: {e}")
         return None
 
+@st.cache_data(ttl=60)  # Cache for 60 seconds
+def get_disk_usage():
+    """Get disk usage information for the VM."""
+    try:
+        # Get disk usage for the root directory
+        disk_usage = shutil.disk_usage('/')
+        
+        # Convert bytes to GB
+        total_gb = disk_usage.total / (1024**3)
+        used_gb = disk_usage.used / (1024**3)
+        free_gb = disk_usage.free / (1024**3)
+        
+        # Calculate percentage
+        used_percent = (used_gb / total_gb) * 100
+        free_percent = (free_gb / total_gb) * 100
+        
+        return {
+            'total_gb': round(total_gb, 2),
+            'used_gb': round(used_gb, 2),
+            'free_gb': round(free_gb, 2),
+            'used_percent': round(used_percent, 1),
+            'free_percent': round(free_percent, 1)
+        }
+    except Exception as e:
+        return {
+            'total_gb': 0,
+            'used_gb': 0,
+            'free_gb': 0,
+            'used_percent': 0,
+            'free_percent': 0,
+            'error': str(e)
+        }
+
+
+@st.cache_data(ttl=60)  # Cache for 60 seconds
+def get_audio_file_stats():
+    """Get audio file statistics from the raw directory."""
+    try:
+        raw_dir = BASE_DIR / "src" / "data" / "raw"
+        
+        if not raw_dir.exists():
+            return {
+                'total_files': 0,
+                'total_size_mb': 0,
+                'avg_size_mb': 0,
+                'error': 'Raw audio directory not found'
+            }
+        
+        # Get all audio files
+        audio_files = list(raw_dir.glob("*.wav"))
+        
+        if not audio_files:
+            return {
+                'total_files': 0,
+                'total_size_mb': 0,
+                'avg_size_mb': 0,
+                'error': 'No audio files found'
+            }
+        
+        # Calculate total size
+        total_size_bytes = sum(f.stat().st_size for f in audio_files)
+        total_size_mb = total_size_bytes / (1024 * 1024)
+        avg_size_mb = total_size_mb / len(audio_files)
+        
+        return {
+            'total_files': len(audio_files),
+            'total_size_mb': round(total_size_mb, 2),
+            'avg_size_mb': round(avg_size_mb, 2)
+        }
+    except Exception as e:
+        return {
+            'total_files': 0,
+            'total_size_mb': 0,
+            'avg_size_mb': 0,
+            'error': str(e)
+        }
+
+@st.cache_data(ttl=10)  # Cache for 10 seconds - CPU changes frequently
+def get_system_info():
+    """Get system resource information."""
+    try:
+        # CPU usage - reduce interval to 0.1 seconds for faster response
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        
+        # Memory usage
+        memory = psutil.virtual_memory()
+        memory_total_gb = memory.total / (1024**3)
+        memory_used_gb = memory.used / (1024**3)
+        memory_percent = memory.percent
+        
+        return {
+            'cpu_percent': round(cpu_percent, 1),
+            'memory_total_gb': round(memory_total_gb, 2),
+            'memory_used_gb': round(memory_used_gb, 2),
+            'memory_percent': round(memory_percent, 1)
+        }
+    except Exception as e:
+        return {
+            'cpu_percent': 0,
+            'memory_total_gb': 0,
+            'memory_used_gb': 0,
+            'memory_percent': 0,
+            'error': str(e)
+        }
+
+
 def extract_flight_number(text: str) -> str:
-    """Extract flight number from transcription text."""
     if not text:
         return "Unknown"
     
@@ -122,6 +232,7 @@ def extract_flight_number(text: str) -> str:
     
     return "Unknown"
 
+@st.cache_data(ttl=10)  # Reduced cache for 10 seconds for better responsiveness
 def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: Optional[pd.DataFrame]) -> Dict[str, Any]:
     """Calculate statistics from both data sources."""
     stats = {
@@ -196,13 +307,15 @@ def main():
         current_time = time.time()
         time_since_refresh = current_time - st.session_state.last_refresh
         
-        if time_since_refresh >= 30:  # Refresh every 30 seconds
-            st.session_state.last_refresh = current_time
-            st.rerun()
-        
         # Show countdown
         time_until_refresh = 30 - (time_since_refresh % 30)
         st.sidebar.info(f"Next refresh in: {int(time_until_refresh)}s")
+        
+        # Auto-refresh every 30 seconds using st.rerun
+        if time_since_refresh >= 30:
+            st.session_state.last_refresh = current_time
+            st.sidebar.success("🔄 Refreshing data...")
+            st.rerun()
     
     # Sidebar with data status
     st.sidebar.header("📊 Data Status")
@@ -240,6 +353,81 @@ def main():
     stats = calculate_stats(transcription_df, communication_df)
     
     st.sidebar.markdown(f"**Last Update:** {stats['last_update'].strftime('%H:%M:%S')}")
+    
+    # VM System Monitoring
+    st.sidebar.markdown("---")
+    st.sidebar.header("🖥️ VM System Status")
+    
+    # Get system information
+    disk_info = get_disk_usage()
+    system_info = get_system_info()
+    audio_stats = get_audio_file_stats()
+    
+    # Disk space monitoring
+    st.sidebar.subheader("💾 Disk Space")
+    if 'error' not in disk_info:
+        st.sidebar.metric(
+            "Used Space", 
+            f"{disk_info['used_gb']:.1f} GB",
+            delta=f"{disk_info['used_percent']:.1f}%"
+        )
+        st.sidebar.metric(
+            "Free Space", 
+            f"{disk_info['free_gb']:.1f} GB",
+            delta=f"{disk_info['free_percent']:.1f}%"
+        )
+        st.sidebar.metric(
+            "Total Space", 
+            f"{disk_info['total_gb']:.1f} GB"
+        )
+        
+        # Disk usage progress bar
+        disk_usage_percent = disk_info['used_percent']
+        if disk_usage_percent > 90:
+            st.sidebar.error(f"⚠️ Disk usage: {disk_usage_percent:.1f}%")
+        elif disk_usage_percent > 80:
+            st.sidebar.warning(f"⚠️ Disk usage: {disk_usage_percent:.1f}%")
+        else:
+            st.sidebar.success(f"✅ Disk usage: {disk_usage_percent:.1f}%")
+    else:
+        st.sidebar.error(f"❌ Disk info error: {disk_info['error']}")
+    
+    # System resources
+    st.sidebar.subheader("⚡ System Resources")
+    if 'error' not in system_info:
+        st.sidebar.metric(
+            "CPU Usage", 
+            f"{system_info['cpu_percent']:.1f}%"
+        )
+        st.sidebar.metric(
+            "Memory Usage", 
+            f"{system_info['memory_used_gb']:.1f} GB",
+            delta=f"{system_info['memory_percent']:.1f}%"
+        )
+        st.sidebar.metric(
+            "Total Memory", 
+            f"{system_info['memory_total_gb']:.1f} GB"
+        )
+    else:
+        st.sidebar.error(f"❌ System info error: {system_info['error']}")
+    
+    # Audio file statistics
+    st.sidebar.subheader("🎵 Audio Files")
+    if 'error' not in audio_stats:
+        st.sidebar.metric(
+            "Total Audio Files", 
+            f"{audio_stats['total_files']:,}"
+        )
+        st.sidebar.metric(
+            "Total Audio Size", 
+            f"{audio_stats['total_size_mb']:.1f} MB"
+        )
+        st.sidebar.metric(
+            "Avg File Size", 
+            f"{audio_stats['avg_size_mb']:.1f} MB"
+        )
+    else:
+        st.sidebar.error(f"❌ Audio stats error: {audio_stats['error']}")
     
     # Show data source file info
     st.sidebar.markdown("---")
@@ -316,32 +504,67 @@ def main():
             else:
                 st.metric("Top Category", "N/A", delta="No data")
         
-        # Recent activity charts
-        col1, col2 = st.columns(2)
+        # Daily Communication Bar Graph
+        st.subheader("📊 Daily Communication Counts")
         
-        with col1:
-            if stats['daily_transcriptions']:
-                st.subheader("📝 Daily Transcriptions")
-                daily_df = pd.DataFrame(list(stats['daily_transcriptions'].items()), 
-                                      columns=['Date', 'Count'])
-                daily_df['Date'] = pd.to_datetime(daily_df['Date'])
-                
-                fig_daily = px.line(daily_df, x='Date', y='Count', 
-                                  title="Transcriptions per Day")
-                fig_daily.update_layout(height=300)
-                st.plotly_chart(fig_daily, use_container_width=True)
+        # Create combined daily data
+        daily_data = []
         
-        with col2:
-            if stats['daily_communications']:
-                st.subheader("🎙️ Daily Communications")
-                comm_daily_df = pd.DataFrame(list(stats['daily_communications'].items()), 
-                                           columns=['Date', 'Count'])
-                comm_daily_df['Date'] = pd.to_datetime(comm_daily_df['Date'])
-                
-                fig_comm = px.line(comm_daily_df, x='Date', y='Count', 
-                                 title="Communication Detections per Day")
-                fig_comm.update_layout(height=300)
-                st.plotly_chart(fig_comm, use_container_width=True)
+        if stats['daily_transcriptions']:
+            for date_str, count in stats['daily_transcriptions'].items():
+                daily_data.append({
+                    'Date': pd.to_datetime(date_str),
+                    'Count': count,
+                    'Type': 'Transcriptions'
+                })
+        
+        if stats['daily_communications']:
+            for date_str, count in stats['daily_communications'].items():
+                daily_data.append({
+                    'Date': pd.to_datetime(date_str),
+                    'Count': count,
+                    'Type': 'Communication Detections'
+                })
+        
+        if daily_data:
+            daily_df = pd.DataFrame(daily_data)
+            
+            # Create bar graph
+            fig_daily_bar = px.bar(
+                daily_df, 
+                x='Date', 
+                y='Count', 
+                color='Type',
+                title="Daily Communication Counts",
+                labels={'Date': 'Date', 'Count': 'Number of Communications'},
+                color_discrete_map={
+                    'Transcriptions': '#1f77b4',
+                    'Communication Detections': '#ff7f0e'
+                }
+            )
+            
+            # Format x-axis to show dates properly
+            fig_daily_bar.update_xaxes(
+                tickformat="%Y-%m-%d",
+                tickangle=45
+            )
+            
+            # Update layout
+            fig_daily_bar.update_layout(
+                height=500,
+                showlegend=True,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1
+                )
+            )
+            
+            st.plotly_chart(fig_daily_bar, use_container_width=True)
+        else:
+            st.info("No daily communication data available yet.")
         
         # Recent transcriptions table
         if transcription_df is not None and not transcription_df.empty:
@@ -354,6 +577,7 @@ def main():
         st.header("Daily Analytics")
         
         if stats['daily_transcriptions'] or stats['daily_communications']:
+            # Statistics tables
             col1, col2 = st.columns(2)
             
             with col1:
@@ -392,8 +616,7 @@ def main():
             st.info("No daily data available yet.")
     
     with tab3:
-        st.header("Communication Categories")
-        
+        # Simple test - just show the data directly
         if stats['categories']:
             col1, col2 = st.columns(2)
             

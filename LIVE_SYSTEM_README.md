@@ -5,19 +5,25 @@ The ATC Voice system now supports **live processing** for both communications de
 
 ## Components
 
-### 1. Live Communications Detection (`logext.py`)
+### 1. Audio Recording & Transcription (`all_in_one.py`)
+- **Input**: LiveATC audio stream
+- **Output**: Audio files (`src/data/raw/`) and transcriptions (`src/data/logs/transcripts/transcription_results.json`)
+- **Status**: ✅ Complete audio processing system
+- **Description**: Records audio, creates chunks, transcribes using Whisper, and logs communications
+
+### 2. Live Communications Detection (`logext.py`)
 - **Input**: LiveATC audio stream
 - **Output**: `src/data/logs/atc_communications.txt`
 - **Status**: ✅ Already live
 - **Description**: Continuously monitors audio stream and logs communication detections
 
-### 2. Live Transcript Processing (`postprocess.py`)
+### 3. Live Transcript Processing (`postprocess.py`)
 - **Input**: `src/data/logs/transcripts/transcription_results.json`
 - **Output**: `src/data/logs/transcripts/categorized_transcription_results.json`
 - **Status**: ✅ Now live with file monitoring
 - **Description**: Automatically categorizes new transcripts and appends to existing data
 
-### 3. Live Dashboard (`app.py`)
+### 4. Live Dashboard (`app.py`)
 - **Input**: Both communication logs and categorized transcriptions
 - **Output**: Real-time web dashboard
 - **Status**: ✅ Updated for live data
@@ -46,9 +52,14 @@ The ATC Voice system now supports **live processing** for both communications de
 ```bash
 ./run_live_system.sh
 ```
-This starts both live postprocessing and the dashboard.
+This starts the complete system: audio recording, transcription, postprocessing, and dashboard.
 
 ### Start Individual Components
+
+#### Audio Recording & Transcription Only
+```bash
+./run_audio_recording.sh
+```
 
 #### Live Postprocessing Only
 ```bash
@@ -88,9 +99,9 @@ src/
 ```
 
 ## Data Flow
-1. **Audio Stream** → `logext.py` → `atc_communications.txt`
+1. **Audio Stream** → `all_in_one.py` → `transcription_results.json` + `atc_communications.txt`
 2. **Raw Transcripts** → `postprocess.py` → `categorized_transcription_results.json`
-3. **Both Files** → `app.py` → **Live Dashboard**
+3. **All Files** → `app.py` → **Live Dashboard**
 
 ## Benefits
 - ✅ **Real-time processing**: No manual intervention needed

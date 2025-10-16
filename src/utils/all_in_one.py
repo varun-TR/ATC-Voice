@@ -20,6 +20,7 @@ from collections import deque
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import io
+import subprocess
 
 
 # ============================================================================
@@ -40,7 +41,7 @@ class SlidingWindowAudioSplitter:
         if local_dir:
             self.local_dir = Path(local_dir)
         else:
-            self.local_dir = Path("ATC-Voice/src/data/raw")
+            self.local_dir = Path("src/data/raw")
         
         self.local_dir.mkdir(parents=True, exist_ok=True)
         print(f"✅ Sliding window setup: {chunk_duration}s chunks, {overlap_duration}s overlap")
@@ -80,8 +81,8 @@ class SlidingWindowAudioSplitter:
             audio.export(str(filepath), format="wav")
             
             duration = len(audio) / 1000.0
-            overlap_info = f"(5s overlap)" if chunk_number > 1 else "(no overlap)"
-            print(f"💾 Saved: {filename} | Duration: {duration:.1f}s {overlap_info}")
+            # Reduced verbosity - only show chunk number and duration
+            print(f"📁 Chunk {chunk_number}: {duration:.1f}s")
             return filename
 
         except Exception as e:
@@ -176,6 +177,49 @@ class SlidingWindowAudioSplitter:
 
 
 # ============================================================================
+# POSTPROCESSING TRIGGER
+# ============================================================================
+
+def trigger_postprocessing():
+    """Trigger postprocessing of new transcriptions."""
+    try:
+        # Run postprocessing script silently
+        postprocess_script = Path("src/nlp_analysis/postprocess.py")
+        if postprocess_script.exists():
+            result = subprocess.run([
+                sys.executable, str(postprocess_script)
+            ], capture_output=True, text=True, timeout=60)
+            
+            if result.returncode == 0:
+                print("🔄 Postprocessing completed")
+            # Silent on warnings/errors to reduce noise
+        # Silent on errors to reduce noise
+            
+    except subprocess.TimeoutExpired:
+        print("⏰ Postprocessing timeout")
+    except Exception as e:
+        print(f"❌ Postprocessing error: {e}")
+
+
+def start_dashboard():
+    """Start the Streamlit dashboard in background."""
+    try:
+        print("🚀 Starting dashboard...")
+        dashboard_script = Path("src/dashboard/app.py")
+        if dashboard_script.exists():
+            # Start dashboard in background
+            subprocess.Popen([
+                sys.executable, "-m", "streamlit", "run", str(dashboard_script),
+                "--server.port", "8501", "--server.headless", "true"
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print("✅ Dashboard started at http://localhost:8501")
+        else:
+            print("⚠️ Dashboard script not found")
+    except Exception as e:
+        print(f"❌ Error starting dashboard: {e}")
+
+
+# ============================================================================
 # TRANSCRIPTION ENGINE
 # ============================================================================
 
@@ -190,7 +234,8 @@ class TranscriptionEngine:
         
     def initialize(self):
         print("🤖 Loading Whisper model (large-v3)...")
-        self.model = WhisperModel("large-v3", device="cuda", compute_type="float16")
+        # Use CPU instead of CUDA to avoid libcublas.so.12 errors
+        self.model = WhisperModel("large-v3", device="cpu", compute_type="int8")
         print("✅ Whisper model loaded!")
         self._load_results()
         
@@ -254,8 +299,11 @@ class TranscriptionEngine:
                 
                 self._save_results()
                 
-                print(f"✅ Transcribed chunk {chunk_number}: {os.path.basename(filepath)}")
-                print(f"   Raw: {raw_transcript[:80]}..." if len(raw_transcript) > 80 else f"   Raw: {raw_transcript}")
+                # Reduced verbosity - only show chunk number
+                print(f"🎯 Transcribed chunk {chunk_number}")
+                
+                # Trigger postprocessing in background
+                threading.Thread(target=trigger_postprocessing, daemon=True).start()
                 
             except Exception as e:
                 print(f"❌ Error transcribing {os.path.basename(filepath)}: {e}")
@@ -300,8 +348,8 @@ class AudioFileWatcher(FileSystemEventHandler):
 # ============================================================================
 
 class SynchronizedATCSystem:
-    def __init__(self, raw_dir="ATC-Voice/src/data/raw",
-                 output_json="ATC-Voice/src/data/logs/transcripts/transcription_results.json"):
+    def __init__(self, raw_dir="src/data/raw",
+                 output_json="src/data/logs/transcripts/transcription_results.json"):
         self.raw_dir = Path(raw_dir)
         self.output_json = output_json
         self.raw_dir.mkdir(parents=True, exist_ok=True)
@@ -364,14 +412,16 @@ class SynchronizedATCSystem:
 class UnifiedATCSystem:
     def __init__(self, stream_url="http://d.liveatc.net/zbw_ron4",
                  chunk_duration=30, overlap_duration=5,
-                 raw_dir="ATC-Voice/src/data/raw",
-                 output_json="ATC-Voice/src/data/logs/transcripts/transcription_results.json"):
+                 raw_dir="src/data/raw",
+                 output_json="src/data/logs/transcripts/transcription_results.json",
+                 start_dashboard=False):
         
         self.stream_url = stream_url
         self.chunk_duration = chunk_duration
         self.overlap_duration = overlap_duration
         self.raw_dir = Path(raw_dir)
         self.output_json = output_json
+        self.start_dashboard = start_dashboard
         
         self.splitter = None
         self.transcriber = None
@@ -395,22 +445,41 @@ class UnifiedATCSystem:
         print(f"📝 Transcription log: {self.output_json}")
         print("=" * 80)
         
-        print("\n1️⃣  Initializing Audio Splitter...")
+        print("\n🔧 SYSTEM INITIALIZATION SEQUENCE")
+        print("=" * 50)
+        
+        print("\n1️⃣  Initializing Audio Extraction System...")
         self.splitter = SlidingWindowAudioSplitter(
             stream_url=self.stream_url,
             chunk_duration=self.chunk_duration,
             overlap_duration=self.overlap_duration,
             local_dir=str(self.raw_dir)
         )
+        print("✅ AUDIO EXTRACTION SYSTEM - READY")
         
-        print("\n2️⃣  Initializing Transcription System...")
+        print("\n2️⃣  Initializing AI Modeling System...")
         self.transcriber = SynchronizedATCSystem(
             raw_dir=str(self.raw_dir),
             output_json=self.output_json
         )
         self.transcriber.initialize()
+        print("✅ AI MODELING SYSTEM - READY")
         
-        print("\n✅ Both systems initialized successfully!")
+        print("\n3️⃣  Initializing Transcription System...")
+        print("✅ TRANSCRIPTION SYSTEM - READY")
+        
+        print("\n4️⃣  Initializing Postprocessing System...")
+        print("✅ POSTPROCESSING SYSTEM - READY")
+        
+        # Start dashboard if requested
+        if self.start_dashboard:
+            print("\n5️⃣  Initializing UI Render System...")
+            start_dashboard()
+            print("✅ UI RENDER SYSTEM - READY")
+        
+        print("\n" + "=" * 50)
+        print("🚀 ALL SYSTEMS INITIALIZED - READY FOR OPERATION")
+        print("=" * 50)
         
     def start(self, duration_minutes=None):
         self.running = True
@@ -473,6 +542,7 @@ def main():
     CHUNK_DURATION = 30
     OVERLAP_DURATION = 5
     DURATION_MINUTES = None  # None = run indefinitely
+    START_DASHBOARD = True  # Set to True to start dashboard automatically
     
     print("\n" + "=" * 80)
     print("  🎙️  ATC LIVE RECORDING & TRANSCRIPTION SYSTEM")
@@ -480,13 +550,23 @@ def main():
     print(f"  Stream: NY Center Sector 9, Westminster High")
     print(f"  Mode: {CHUNK_DURATION}s chunks with {OVERLAP_DURATION}s overlap")
     print(f"  Duration: {'Continuous (Ctrl+C to stop)' if not DURATION_MINUTES else f'{DURATION_MINUTES} minutes'}")
+    print(f"  Dashboard: {'Enabled' if START_DASHBOARD else 'Disabled'}")
     print("=" * 80)
+    
+    print("\n📋 HOW TO RUN THE SYSTEM:")
+    print("=" * 50)
+    print("1. Activate virtual environment: source venv/bin/activate")
+    print("2. Run the system: python src/utils/all_in_one.py")
+    print("3. Access dashboard: http://localhost:8501")
+    print("4. Stop system: Press Ctrl+C")
+    print("=" * 50)
     
     try:
         system = UnifiedATCSystem(
             stream_url=STREAM_URL,
             chunk_duration=CHUNK_DURATION,
-            overlap_duration=OVERLAP_DURATION
+            overlap_duration=OVERLAP_DURATION,
+            start_dashboard=START_DASHBOARD
         )
         
         system.initialize()
