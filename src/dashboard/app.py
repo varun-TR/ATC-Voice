@@ -241,6 +241,7 @@ def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: 
         'categories': {},
         'daily_transcriptions': {},
         'daily_communications': {},
+        'daily_category_counts': {},  # New: daily counts by category
         'hourly_pattern': {},
         'flight_stats': {},
         'duration_stats': {},
@@ -253,6 +254,14 @@ def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: 
         stats['categories'] = transcription_df['category'].value_counts().to_dict()
         stats['daily_transcriptions'] = transcription_df.groupby('date').size().to_dict()
         stats['hourly_pattern'] = transcription_df.groupby('hour').size().to_dict()
+        
+        # Calculate daily counts by category
+        daily_category_groups = transcription_df.groupby(['date', 'category']).size()
+        stats['daily_category_counts'] = {}
+        for (date, category), count in daily_category_groups.items():
+            if category not in stats['daily_category_counts']:
+                stats['daily_category_counts'][category] = {}
+            stats['daily_category_counts'][category][str(date)] = count
         
         # Flight statistics
         flight_counts = transcription_df['flight_number'].value_counts()
@@ -647,15 +656,63 @@ def main():
             category_details = []
             for category, count in stats['categories'].items():
                 percentage = (count / stats['total_transcriptions']) * 100
+                
+                # Get daily counts for this category
+                daily_counts = stats['daily_category_counts'].get(category, {})
+                avg_per_day = count / len(stats['daily_transcriptions']) if stats['daily_transcriptions'] else 0
+                
+                # Calculate additional daily statistics
+                if daily_counts:
+                    daily_values = list(daily_counts.values())
+                    min_daily = min(daily_values)
+                    max_daily = max(daily_values)
+                    avg_daily = sum(daily_values) / len(daily_values)
+                else:
+                    min_daily = max_daily = avg_daily = 0
+                
                 category_details.append({
                     'Category': category,
-                    'Count': count,
+                    'Total Count': count,
                     'Percentage': f"{percentage:.1f}%",
-                    'Avg per Day': f"{count / len(stats['daily_transcriptions']) if stats['daily_transcriptions'] else 0:.1f}"
+                    'Avg per Day': f"{avg_per_day:.1f}",
+                    'Min Daily': min_daily,
+                    'Max Daily': max_daily,
+                    'Avg Daily': f"{avg_daily:.1f}"
                 })
             
             category_df = pd.DataFrame(category_details)
             st.dataframe(category_df, use_container_width=True, hide_index=True)
+            
+            # Daily breakdown by category
+            if stats['daily_category_counts']:
+                st.subheader("📅 Daily Breakdown by Category")
+                
+                # Create a comprehensive daily breakdown table
+                daily_breakdown_data = []
+                all_dates = set()
+                
+                # Collect all unique dates
+                for category_data in stats['daily_category_counts'].values():
+                    all_dates.update(category_data.keys())
+                
+                all_dates = sorted(all_dates)
+                
+                # Create breakdown for each category
+                for category, daily_counts in stats['daily_category_counts'].items():
+                    row = {'Category': category}
+                    total_for_category = 0
+                    
+                    for date in all_dates:
+                        count = daily_counts.get(date, 0)
+                        row[f"{date}"] = count
+                        total_for_category += count
+                    
+                    row['Total'] = total_for_category
+                    daily_breakdown_data.append(row)
+                
+                if daily_breakdown_data:
+                    daily_breakdown_df = pd.DataFrame(daily_breakdown_data)
+                    st.dataframe(daily_breakdown_df, use_container_width=True, hide_index=True)
         
         else:
             st.info("No category data available yet.")
