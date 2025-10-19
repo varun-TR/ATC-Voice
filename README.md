@@ -1,4 +1,4 @@
-# 🛫 ATC Voice Communications Dashboard (Voice-to-Text)
+# 🛫 CATSR (ATC Voice) Live Communications Dashboard
 
 ## 📌 Project Overview
 This project is part of the **GMU DAEN Capstone (Fall 2025)** and focuses on building an **Air Traffic Control (ATC) Voice Communications Dashboard**.  
