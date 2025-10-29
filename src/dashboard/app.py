@@ -15,7 +15,7 @@ from functools import lru_cache
 
 # Set page config
 st.set_page_config(
-    page_title="ATC Voice Communications Dashboard",
+    page_title="CATSR Live Communications Dashboard",
     page_icon="🛫",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -537,7 +537,7 @@ def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: 
     return stats
 
 def main():
-    st.title("🛫 ATC Voice Communications Dashboard")
+    st.title("🛫 CATSR Live Communications Dashboard")
     st.markdown("---")
     
     # Auto-refresh for live data
@@ -1333,7 +1333,7 @@ def main():
         st.markdown(
             """
             <div style='text-align: center; color: #666;'>
-                🛫 ATC Voice Communications Dashboard | 🟢 Live Processing Active (Communications + Transcriptions)
+                🛫 CATSR Live Communications Dashboard | 🟢 Live Processing Active (Communications + Transcriptions)
             </div>
             """, 
             unsafe_allow_html=True
@@ -1342,7 +1342,7 @@ def main():
         st.markdown(
             """
             <div style='text-align: center; color: #666;'>
-                🛫 ATC Voice Communications Dashboard | ⏸️ Manual Refresh Mode
+                🛫 CATSR Live Communications Dashboard | ⏸️ Manual Refresh Mode
             </div>
             """, 
             unsafe_allow_html=True
