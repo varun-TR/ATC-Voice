@@ -12,8 +12,9 @@ import sys
 import requests
 import numpy as np
 import librosa
+import soundfile as sf
 from datetime import datetime, timezone
-from faster_whisper import WhisperModel
+from transformers import pipeline
 from pathlib import Path
 from pydub import AudioSegment
 from collections import deque
@@ -201,6 +202,23 @@ def trigger_postprocessing():
         print(f"❌ Postprocessing error: {e}")
 
 
+def start_live_postprocessor():
+    """Start the live postprocessor in a separate thread."""
+    try:
+        print("🔄 Starting live postprocessor...")
+        postprocessor_script = Path("fast_live_postprocessor.py")
+        if postprocessor_script.exists():
+            # Start postprocessor in background thread
+            subprocess.Popen([
+                sys.executable, str(postprocessor_script)
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print("✅ Live postprocessor started")
+        else:
+            print("⚠️ Live postprocessor script not found")
+    except Exception as e:
+        print(f"❌ Error starting live postprocessor: {e}")
+
+
 def start_dashboard():
     """Start the Streamlit dashboard in background."""
     try:
@@ -224,52 +242,126 @@ def start_dashboard():
 # ============================================================================
 
 class TranscriptionEngine:
-    def __init__(self, output_json, sample_rate=16_000):
+    def __init__(self, output_json, sample_rate=16_000, transcripts_json=None):
         self.output_json = output_json
+        self.transcripts_json = transcripts_json or "src/data/logs/transcripts/transcripts.json"
         self.sr = sample_rate
-        self.model = None
+        self.pipeline = None
         self.results = None
         self.processed_files = set()
         self.lock = threading.Lock()
         
     def initialize(self):
-        print("🤖 Loading Whisper model (large-v3)...")
-        # Use CPU instead of CUDA to avoid libcublas.so.12 errors
-        self.model = WhisperModel("large-v3", device="cpu", compute_type="int8")
-        print("✅ Whisper model loaded!")
+        print("🤖 Loading ATC-specialized Whisper model (jlvdoorn/whisper-large-v3-atco2-asr)...")
+        # Use GPU if available and not already in use, otherwise fallback to CPU
+        import torch
+        device = 0 if torch.cuda.is_available() and torch.cuda.memory_allocated() == 0 else -1
+        device_name = "GPU" if device == 0 else "CPU"
+        print(f"🖥️  Using device: {device_name}")
+        
+        self.pipeline = pipeline(
+            "automatic-speech-recognition",
+            model="jlvdoorn/whisper-large-v3-atco2-asr",
+            device=device,
+            dtype=torch.float16 if device == 0 else torch.float32  # Use dtype instead of torch_dtype
+        )
+        print("✅ ATC-specialized Whisper model loaded!")
         self._load_results()
         
     def _load_results(self):
-        if os.path.exists(self.output_json):
+        # Load from transcripts.json (ATC model results)
+        if os.path.exists(self.transcripts_json):
             try:
-                with open(self.output_json, 'r', encoding='utf-8') as f:
-                    self.results = json.load(f)
-                    self.processed_files = {
-                        item['audio_file_raw'] for item in self.results.get('items', [])
+                with open(self.transcripts_json, 'r', encoding='utf-8') as f:
+                    transcripts_data = json.load(f)
+                    print(f"📂 Loaded ATC model transcripts: {len(transcripts_data.get('items', []))} items")
+                    
+                    # Convert transcripts format to our format
+                    self.results = {
+                        "created_utc": transcripts_data.get("created_utc", datetime.now(timezone.utc).isoformat()),
+                        "model_used": "jlvdoorn/whisper-large-v3-atco2-asr",
+                        "items": []
                     }
-                print(f"📂 Loaded {len(self.processed_files)} existing transcriptions")
+                    
+                    # Process transcripts and add to results
+                    for item in transcripts_data.get('items', []):
+                        if not item.get('raw_transcription', '').startswith('ERROR:'):
+                            self.results['items'].append({
+                                "chunk_number": item.get('chunk_number', 0),
+                                "audio_file_raw": item.get('audio_file_raw', ''),
+                                "raw_duration_s": item.get('raw_duration_s', 0),
+                                "timestamp_utc": item.get('timestamp_utc', ''),
+                                "raw_transcription": item.get('raw_transcription', '')
+                            })
+                            self.processed_files.add(item.get('audio_file_raw', ''))
+                    
+                    print(f"✅ Loaded {len(self.processed_files)} ATC-transcribed files")
+                    return
+                    
             except Exception as e:
-                print(f"⚠️  Error loading results: {e}")
-                self.results = None
+                print(f"⚠️  Error loading transcripts.json: {e}")
         
-        if self.results is None:
-            self.results = {
-                "created_utc": datetime.now(timezone.utc).isoformat(),
-                "items": []
-            }
+        # Initialize empty results if transcripts.json doesn't exist
+        self.results = {
+            "created_utc": datetime.now(timezone.utc).isoformat(),
+            "model_used": "jlvdoorn/whisper-large-v3-atco2-asr",
+            "items": []
+        }
     
     def _load_audio(self, path: str) -> np.ndarray:
         y, sr = librosa.load(path, sr=self.sr, mono=True)
         return y.astype(np.float32)
     
+    def _transcribe_long_audio(self, audio_path: str, chunk_seconds: int = 30):
+        """Transcribe long audio by splitting it into chunks to avoid Whisper's 30s limit."""
+        y, sr = librosa.load(audio_path, sr=None)
+        chunk_size = sr * chunk_seconds
+        transcription = ""
+        
+        for i in range(0, len(y), chunk_size):
+            chunk = y[i:i+chunk_size]
+            temp_path = "temp_chunk.wav"
+            sf.write(temp_path, chunk, sr)
+            
+            try:
+                # Use language='en' to avoid multilingual detection
+                result = self.pipeline(
+                    temp_path, 
+                    language='en',
+                    task='transcribe'
+                )
+                transcription += result['text'] + " "
+            finally:
+                # Clean up temporary file
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+        
+        return transcription.strip()
+    
     def _transcribe_array(self, y: np.ndarray):
-        segments, info = self.model.transcribe(y, language="en", beam_size=5)
-        text = "".join(seg.text for seg in segments)
-        return text.strip(), info.duration
+        """Transcribe audio array using the pipeline."""
+        # Save to temporary file for pipeline processing
+        temp_path = "temp_audio.wav"
+        sf.write(temp_path, y, self.sr)
+        
+        try:
+            result = self.pipeline(
+                temp_path, 
+                language='en',
+                task='transcribe'
+            )
+            text = result['text'].strip()
+            duration = len(y) / self.sr
+            return text, duration
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
     
     def _save_results(self):
-        os.makedirs(os.path.dirname(self.output_json), exist_ok=True)
-        with open(self.output_json, 'w', encoding='utf-8') as f:
+        # Save only to transcripts.json for ATC model results
+        os.makedirs(os.path.dirname(self.transcripts_json), exist_ok=True)
+        with open(self.transcripts_json, 'w', encoding='utf-8') as f:
             json.dump(self.results, f, indent=2, ensure_ascii=False)
     
     def transcribe_file(self, filepath: str):
@@ -281,8 +373,12 @@ class TranscriptionEngine:
             try:
                 print(f"🎯 Transcribing: {os.path.basename(filepath)}")
                 
+                # Use the long audio transcription method for better handling
+                raw_transcript = self._transcribe_long_audio(filepath)
+                
+                # Get audio duration
                 audio = self._load_audio(filepath)
-                raw_transcript, raw_duration = self._transcribe_array(audio)
+                raw_duration = len(audio) / self.sr
                 
                 chunk_number = len(self.results['items']) + 1
                 item = {
@@ -457,18 +553,19 @@ class UnifiedATCSystem:
         )
         print("✅ AUDIO EXTRACTION SYSTEM - READY")
         
-        print("\n2️⃣  Initializing AI Modeling System...")
+        print("\n2️⃣  Initializing ATC-Specialized AI Modeling System...")
         self.transcriber = SynchronizedATCSystem(
             raw_dir=str(self.raw_dir),
             output_json=self.output_json
         )
         self.transcriber.initialize()
-        print("✅ AI MODELING SYSTEM - READY")
+        print("✅ ATC-SPECIALIZED AI MODELING SYSTEM - READY")
         
         print("\n3️⃣  Initializing Transcription System...")
         print("✅ TRANSCRIPTION SYSTEM - READY")
         
         print("\n4️⃣  Initializing Postprocessing System...")
+        start_live_postprocessor()
         print("✅ POSTPROCESSING SYSTEM - READY")
         
         # Start dashboard if requested
@@ -548,6 +645,7 @@ def main():
     print("  🎙️  ATC LIVE RECORDING & TRANSCRIPTION SYSTEM")
     print("=" * 80)
     print(f"  Stream: NY Center Sector 9, Westminster High")
+    print(f"  Model: ATC-specialized Whisper (jlvdoorn/whisper-large-v3-atco2-asr)")
     print(f"  Mode: {CHUNK_DURATION}s chunks with {OVERLAP_DURATION}s overlap")
     print(f"  Duration: {'Continuous (Ctrl+C to stop)' if not DURATION_MINUTES else f'{DURATION_MINUTES} minutes'}")
     print(f"  Dashboard: {'Enabled' if START_DASHBOARD else 'Disabled'}")
@@ -559,6 +657,7 @@ def main():
     print("2. Run the system: python src/utils/all_in_one.py")
     print("3. Access dashboard: http://localhost:8501")
     print("4. Stop system: Press Ctrl+C")
+    print("5. ATC Model: jlvdoorn/whisper-large-v3-atco2-asr")
     print("=" * 50)
     
     try:

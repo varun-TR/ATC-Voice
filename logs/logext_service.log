@@ -1,0 +1,26 @@
+🚀 Starting ATC Communications Detection Service
+================================================
+Activating virtual environment...
+🎙️ Starting communications detection...
+✅ Communications detection started (PID: 3452533)
+
+🎉 ATC Communications Detection Service Started!
+================================================
+📁 Log file: logs/logext.log
+🆔 Process ID: 3452533
+
+📋 Service Status:
+   - Auto-restart: Enabled
+   - Monitoring: Active
+   - Log rotation: Automatic
+
+⌨️  Press Ctrl+C to stop the service
+================================================
+⚠️ Communications detection stopped unexpectedly. Restarting...
+🎙️ Starting communications detection...
+✅ Communications detection started (PID: 3454867)
+🔄 Service restarted (PID: 3454867)
+
+🛑 Stopping ATC Communications Detection Service...
+✅ Communications detection stopped
+👋 Service shutdown complete!

@@ -1,0 +1,2248 @@
+{
+    "Altitude Clearances": {
+        "category": "Altitude Clearances",
+        "source_reference": "FAA JO 7110.65 / ICAO Doc 4444 (PANS-ATM)",
+        "keywords": [
+            "altitude",
+            "as filed",
+            "cleared",
+            "climb",
+            "climb via",
+            "cross",
+            "descend",
+            "descend via",
+            "expect",
+            "feet",
+            "flight level",
+            "initial climb",
+            "leaving",
+            "level",
+            "maintain",
+            "maintain altitude",
+            "maintain flight level",
+            "passing",
+            "reach",
+            "reaching",
+            "through",
+            "via"
+        ],
+        "related_patterns": [
+            "altitude",
+            "as assigned",
+            "cleared to",
+            "climb and maintain",
+            "climb to",
+            "climb via",
+            "cross at",
+            "descend and maintain",
+            "descend to",
+            "descend via",
+            "expect flight level",
+            "flight level",
+            "level off at",
+            "maintain assigned altitude",
+            "maintain flight level"
+        ],
+        "airline_callsigns": {
+            "AeroMexico": [
+                "AeroMexico",
+                "AeroMexico",
+                "AMX"
+            ],
+            "AeroUnion": [
+                "AeroUnion",
+                "AeroUnion Cargo",
+                "MXU"
+            ],
+            "Aer Lingus": [
+                "Aer Lingus",
+                "Aer Lingus",
+                "EIN"
+            ],
+            "Air Canada": [
+                "Air Canada",
+                "Air Canada",
+                "ACA"
+            ],
+            "Air China": [
+                "Air China",
+                "Air China",
+                "CCA"
+            ],
+            "Air France": [
+                "Air France",
+                "Air France",
+                "AFR"
+            ],
+            "Air India": [
+                "Air India",
+                "Air India",
+                "AIC"
+            ],
+            "Air Wisconsin": [
+                "Air Wisconsin",
+                "Air Wisconsin Airlines",
+                "AWI"
+            ],
+            "Alaska Airlines": [
+                "Alaska",
+                "Alaska Airlines",
+                "ASA"
+            ],
+            "Allegiant Air": [
+                "Allegiant",
+                "Allegiant Air",
+                "AAY"
+            ],
+            "American Airlines": [
+                "American",
+                "American Airlines",
+                "AAL"
+            ],
+            "ANA": [
+                "ANA",
+                "All Nippon Airways",
+                "ANA"
+            ],
+            "Apollo": [
+                "Apollo",
+                "Apollo Air Service",
+                "APL"
+            ],
+            "Asiana Airlines": [
+                "Asiana",
+                "Asiana Airlines",
+                "AAR"
+            ],
+            "Atlas Air": [
+                "Atlas",
+                "Atlas Air (Cargo)",
+                "GTI"
+            ],
+            "Austrian Airlines": [
+                "Austrian",
+                "Austrian Airlines",
+                "AUA"
+            ],
+            "Avelo Airlines": [
+                "Avelo",
+                "Avelo Airlines",
+                "VXP"
+            ],
+            "Avianca": [
+                "Avianca",
+                "Avianca Airlines",
+                "AVA"
+            ],
+            "Boutique Air": [
+                "Boutique",
+                "Boutique Air",
+                "BTQ"
+            ],
+            "Breeze Airways": [
+                "Moxie",
+                "Breeze Airways",
+                "MXY"
+            ],
+            "British Airways": [
+                "Speedbird",
+                "British Airways",
+                "BAW"
+            ],
+            "Cargojet Airways": [
+                "Cargojet",
+                "Cargojet Airways (Cargo)",
+                "CJT"
+            ],
+            "Cathay Pacific": [
+                "Cathay",
+                "Cathay Pacific Airways",
+                "CPA"
+            ],
+            "CommutAir": [
+                "CommutAir",
+                "CommutAir (United Express)",
+                "UCA"
+            ],
+            "Contour Airlines": [
+                "Contour",
+                "Contour Airlines",
+                "VTE"
+            ],
+            "Copa Airlines": [
+                "Copa",
+                "Copa Airlines",
+                "CMP"
+            ],
+            "Delta Air Lines": [
+                "Delta",
+                "Delta Air Lines",
+                "DAL"
+            ],
+            "DHL Aviation": [
+                "DHL",
+                "DHL Aviation (Cargo)",
+                "DHK"
+            ],
+            "Emirates": [
+                "Emirates",
+                "Emirates",
+                "UAE"
+            ],
+            "Endeavor Air": [
+                "Endeavor",
+                "Endeavor Air (Delta Connection)",
+                "EDV"
+            ],
+            "Envoy Air": [
+                "Envoy",
+                "Envoy Air (American Eagle)",
+                "ENY"
+            ],
+            "Ethiopian Airlines": [
+                "Ethiopian",
+                "Ethiopian Airlines",
+                "ETH"
+            ],
+            "Etihad Airways": [
+                "Etihad",
+                "Etihad Airways",
+                "ETD"
+            ],
+            "FedEx Express": [
+                "FedEx",
+                "FedEx Express (Cargo)",
+                "FDX"
+            ],
+            "Frontier Airlines": [
+                "Frontier",
+                "Frontier Airlines",
+                "FFT"
+            ],
+            "Iberia Airlines": [
+                "Iberia",
+                "Iberia Airlines",
+                "IBE"
+            ],
+            "ITA Airways": [
+                "ITA",
+                "ITA Airways",
+                "ITY"
+            ],
+            "JetBlue Airways": [
+                "JetBlue",
+                "JetBlue Airways",
+                "JBU"
+            ],
+            "Kalitta Air": [
+                "Kalitta",
+                "Kalitta Air (Cargo)",
+                "CKS"
+            ],
+            "Kenya Airways": [
+                "Kenya",
+                "Kenya Airways",
+                "KQA"
+            ],
+            "KLM": [
+                "KLM",
+                "KLM Royal Dutch Airlines",
+                "KLM"
+            ],
+            "Korean Air": [
+                "Korean",
+                "Korean Air",
+                "KAL"
+            ],
+            "LATAM Airlines": [
+                "LATAM",
+                "LATAM Airlines",
+                "LAN"
+            ],
+            "Lufthansa": [
+                "Lufthansa",
+                "Lufthansa",
+                "DLH"
+            ],
+            "Mesa Airlines": [
+                "Mesa",
+                "Mesa Airlines (United Express / American Eagle)",
+                "ASH"
+            ],
+            "Piedmont Airlines": [
+                "Piedmont",
+                "Piedmont Airlines (American Eagle)",
+                "PDT"
+            ],
+            "Porter Airlines": [
+                "Porter",
+                "Porter Airlines",
+                "POE"
+            ],
+            "Prime Air": [
+                "Amazon",
+                "Amazon Prime Air (Cargo)",
+                "MZN"
+            ],
+            "PSA Airlines": [
+                "PSA",
+                "PSA Airlines (American Eagle)",
+                "JIA"
+            ],
+            "Qatar Airways": [
+                "Qatar",
+                "Qatar Airways",
+                "QTR"
+            ],
+            "Republic Airways": [
+                "Republic",
+                "Republic Airways (United/Delta/American)",
+                "RPA"
+            ],
+            "Royal Air Maroc": [
+                "Royal Air Maroc",
+                "Royal Air Maroc",
+                "RAM"
+            ],
+            "SAS": [
+                "Scandi",
+                "Scandinavian Airlines",
+                "SAS"
+            ],
+            "Saudia": [
+                "Saudia",
+                "Saudi Arabian Airlines",
+                "SVA"
+            ],
+            "Singapore Airlines": [
+                "Singapore",
+                "Singapore Airlines",
+                "SIA"
+            ],
+            "SkyWest Airlines": [
+                "SkyWest",
+                "SkyWest Airlines (Delta/United)",
+                "SKW"
+            ],
+            "Southern Airways Express": [
+                "Southern",
+                "Southern Airways Express",
+                "FDY"
+            ],
+            "Southwest Airlines": [
+                "Southwest",
+                "Southwest Airlines",
+                "SWA"
+            ],
+            "Sun Country Airlines": [
+                "Sun Country",
+                "Sun Country Airlines",
+                "SCX"
+            ],
+            "Swiss International": [
+                "Swiss",
+                "Swiss International Air Lines",
+                "SWR"
+            ],
+            "TAP Air Portugal": [
+                "TAP",
+                "TAP Air Portugal",
+                "TAP"
+            ],
+            "Turkish Airlines": [
+                "Turkish",
+                "Turkish Airlines",
+                "THY"
+            ],
+            "United Airlines": [
+                "United",
+                "United Airlines",
+                "UAL"
+            ],
+            "UPS Airlines": [
+                "UPS",
+                "UPS Airlines (Cargo)",
+                "UPS"
+            ],
+            "Virgin Atlantic": [
+                "Virgin",
+                "Virgin Atlantic Airways",
+                "VIR"
+            ],
+            "Volaris": [
+                "Volaris",
+                "Volaris Airlines",
+                "VOI"
+            ],
+            "WestJet": [
+                "WestJet",
+                "WestJet Airlines",
+                "WJA"
+            ]
+        }
+    },
+    "Frequency Handoffs": {
+        "category": "Frequency Handoffs",
+        "source_reference": "FAA JO 7110.65 Ch.10 / ICAO Annex 10 Vol II",
+        "keywords": [
+            "approach",
+            "back with you",
+            "center",
+            "change to",
+            "checking in",
+            "contact",
+            "control",
+            "departure",
+            "frequency",
+            "go to",
+            "good day",
+            "handoff",
+            "handover",
+            "leaving you",
+            "monitor",
+            "on frequency",
+            "point",
+            "radio check",
+            "roger",
+            "standby frequency",
+            "switch",
+            "tower",
+            "transmit",
+            "wilco",
+            "with you"
+        ],
+        "related_patterns": [
+            "change frequency",
+            "change to advisory",
+            "contact",
+            "contact radar on",
+            "frequency change approved",
+            "go to",
+            "handoff",
+            "monitor",
+            "on frequency",
+            "over to",
+            "report on",
+            "switch frequency",
+            "switch over",
+            "switch to"
+        ],
+        "airline_callsigns": {
+            "AeroMexico": [
+                "AeroMexico",
+                "AeroMexico",
+                "AMX"
+            ],
+            "AeroUnion": [
+                "AeroUnion",
+                "AeroUnion Cargo",
+                "MXU"
+            ],
+            "Aer Lingus": [
+                "Aer Lingus",
+                "Aer Lingus",
+                "EIN"
+            ],
+            "Air Canada": [
+                "Air Canada",
+                "Air Canada",
+                "ACA"
+            ],
+            "Air China": [
+                "Air China",
+                "Air China",
+                "CCA"
+            ],
+            "Air France": [
+                "Air France",
+                "Air France",
+                "AFR"
+            ],
+            "Air India": [
+                "Air India",
+                "Air India",
+                "AIC"
+            ],
+            "Air Wisconsin": [
+                "Air Wisconsin",
+                "Air Wisconsin Airlines",
+                "AWI"
+            ],
+            "Alaska Airlines": [
+                "Alaska",
+                "Alaska Airlines",
+                "ASA"
+            ],
+            "Allegiant Air": [
+                "Allegiant",
+                "Allegiant Air",
+                "AAY"
+            ],
+            "American Airlines": [
+                "American",
+                "American Airlines",
+                "AAL"
+            ],
+            "ANA": [
+                "ANA",
+                "All Nippon Airways",
+                "ANA"
+            ],
+            "Apollo": [
+                "Apollo",
+                "Apollo Air Service",
+                "APL"
+            ],
+            "Asiana Airlines": [
+                "Asiana",
+                "Asiana Airlines",
+                "AAR"
+            ],
+            "Atlas Air": [
+                "Atlas",
+                "Atlas Air (Cargo)",
+                "GTI"
+            ],
+            "Austrian Airlines": [
+                "Austrian",
+                "Austrian Airlines",
+                "AUA"
+            ],
+            "Avelo Airlines": [
+                "Avelo",
+                "Avelo Airlines",
+                "VXP"
+            ],
+            "Avianca": [
+                "Avianca",
+                "Avianca Airlines",
+                "AVA"
+            ],
+            "Boutique Air": [
+                "Boutique",
+                "Boutique Air",
+                "BTQ"
+            ],
+            "Breeze Airways": [
+                "Moxie",
+                "Breeze Airways",
+                "MXY"
+            ],
+            "British Airways": [
+                "Speedbird",
+                "British Airways",
+                "BAW"
+            ],
+            "Cargojet Airways": [
+                "Cargojet",
+                "Cargojet Airways (Cargo)",
+                "CJT"
+            ],
+            "Cathay Pacific": [
+                "Cathay",
+                "Cathay Pacific Airways",
+                "CPA"
+            ],
+            "CommutAir": [
+                "CommutAir",
+                "CommutAir (United Express)",
+                "UCA"
+            ],
+            "Contour Airlines": [
+                "Contour",
+                "Contour Airlines",
+                "VTE"
+            ],
+            "Copa Airlines": [
+                "Copa",
+                "Copa Airlines",
+                "CMP"
+            ],
+            "Delta Air Lines": [
+                "Delta",
+                "Delta Air Lines",
+                "DAL"
+            ],
+            "DHL Aviation": [
+                "DHL",
+                "DHL Aviation (Cargo)",
+                "DHK"
+            ],
+            "Emirates": [
+                "Emirates",
+                "Emirates",
+                "UAE"
+            ],
+            "Endeavor Air": [
+                "Endeavor",
+                "Endeavor Air (Delta Connection)",
+                "EDV"
+            ],
+            "Envoy Air": [
+                "Envoy",
+                "Envoy Air (American Eagle)",
+                "ENY"
+            ],
+            "Ethiopian Airlines": [
+                "Ethiopian",
+                "Ethiopian Airlines",
+                "ETH"
+            ],
+            "Etihad Airways": [
+                "Etihad",
+                "Etihad Airways",
+                "ETD"
+            ],
+            "FedEx Express": [
+                "FedEx",
+                "FedEx Express (Cargo)",
+                "FDX"
+            ],
+            "Frontier Airlines": [
+                "Frontier",
+                "Frontier Airlines",
+                "FFT"
+            ],
+            "Iberia Airlines": [
+                "Iberia",
+                "Iberia Airlines",
+                "IBE"
+            ],
+            "ITA Airways": [
+                "ITA",
+                "ITA Airways",
+                "ITY"
+            ],
+            "JetBlue Airways": [
+                "JetBlue",
+                "JetBlue Airways",
+                "JBU"
+            ],
+            "Kalitta Air": [
+                "Kalitta",
+                "Kalitta Air (Cargo)",
+                "CKS"
+            ],
+            "Kenya Airways": [
+                "Kenya",
+                "Kenya Airways",
+                "KQA"
+            ],
+            "KLM": [
+                "KLM",
+                "KLM Royal Dutch Airlines",
+                "KLM"
+            ],
+            "Korean Air": [
+                "Korean",
+                "Korean Air",
+                "KAL"
+            ],
+            "LATAM Airlines": [
+                "LATAM",
+                "LATAM Airlines",
+                "LAN"
+            ],
+            "Lufthansa": [
+                "Lufthansa",
+                "Lufthansa",
+                "DLH"
+            ],
+            "Mesa Airlines": [
+                "Mesa",
+                "Mesa Airlines (United Express / American Eagle)",
+                "ASH"
+            ],
+            "Piedmont Airlines": [
+                "Piedmont",
+                "Piedmont Airlines (American Eagle)",
+                "PDT"
+            ],
+            "Porter Airlines": [
+                "Porter",
+                "Porter Airlines",
+                "POE"
+            ],
+            "Prime Air": [
+                "Amazon",
+                "Amazon Prime Air (Cargo)",
+                "MZN"
+            ],
+            "PSA Airlines": [
+                "PSA",
+                "PSA Airlines (American Eagle)",
+                "JIA"
+            ],
+            "Qatar Airways": [
+                "Qatar",
+                "Qatar Airways",
+                "QTR"
+            ],
+            "Republic Airways": [
+                "Republic",
+                "Republic Airways (United/Delta/American)",
+                "RPA"
+            ],
+            "Royal Air Maroc": [
+                "Royal Air Maroc",
+                "Royal Air Maroc",
+                "RAM"
+            ],
+            "SAS": [
+                "Scandi",
+                "Scandinavian Airlines",
+                "SAS"
+            ],
+            "Saudia": [
+                "Saudia",
+                "Saudi Arabian Airlines",
+                "SVA"
+            ],
+            "Singapore Airlines": [
+                "Singapore",
+                "Singapore Airlines",
+                "SIA"
+            ],
+            "SkyWest Airlines": [
+                "SkyWest",
+                "SkyWest Airlines (Delta/United)",
+                "SKW"
+            ],
+            "Southern Airways Express": [
+                "Southern",
+                "Southern Airways Express",
+                "FDY"
+            ],
+            "Southwest Airlines": [
+                "Southwest",
+                "Southwest Airlines",
+                "SWA"
+            ],
+            "Sun Country Airlines": [
+                "Sun Country",
+                "Sun Country Airlines",
+                "SCX"
+            ],
+            "Swiss International": [
+                "Swiss",
+                "Swiss International Air Lines",
+                "SWR"
+            ],
+            "TAP Air Portugal": [
+                "TAP",
+                "TAP Air Portugal",
+                "TAP"
+            ],
+            "Turkish Airlines": [
+                "Turkish",
+                "Turkish Airlines",
+                "THY"
+            ],
+            "United Airlines": [
+                "United",
+                "United Airlines",
+                "UAL"
+            ],
+            "UPS Airlines": [
+                "UPS",
+                "UPS Airlines (Cargo)",
+                "UPS"
+            ],
+            "Virgin Atlantic": [
+                "Virgin",
+                "Virgin Atlantic Airways",
+                "VIR"
+            ],
+            "Volaris": [
+                "Volaris",
+                "Volaris Airlines",
+                "VOI"
+            ],
+            "WestJet": [
+                "WestJet",
+                "WestJet Airlines",
+                "WJA"
+            ]
+        }
+    },
+    "Heading Vectors": {
+        "category": "Heading Vectors",
+        "source_reference": "FAA JO 7110.65 Ch.5 / ICAO PANS-ATM \u00a78.9",
+        "keywords": [
+            "bearing",
+            "course",
+            "direct",
+            "fly heading",
+            "heading",
+            "inbound",
+            "intercept",
+            "left",
+            "maintain present heading",
+            "outbound",
+            "radial",
+            "resume own navigation",
+            "right",
+            "runway heading",
+            "track",
+            "turn",
+            "vector"
+        ],
+        "related_patterns": [
+            "adjust course",
+            "fly heading",
+            "fly runway centerline",
+            "fly runway heading",
+            "heading",
+            "join final approach course",
+            "maintain present heading",
+            "make a left turn",
+            "make a right turn",
+            "proceed direct",
+            "turn immediately left",
+            "turn immediately right",
+            "turn left",
+            "turn right",
+            "vector to"
+        ],
+        "airline_callsigns": {
+            "AeroMexico": [
+                "AeroMexico",
+                "AeroMexico",
+                "AMX"
+            ],
+            "AeroUnion": [
+                "AeroUnion",
+                "AeroUnion Cargo",
+                "MXU"
+            ],
+            "Aer Lingus": [
+                "Aer Lingus",
+                "Aer Lingus",
+                "EIN"
+            ],
+            "Air Canada": [
+                "Air Canada",
+                "Air Canada",
+                "ACA"
+            ],
+            "Air China": [
+                "Air China",
+                "Air China",
+                "CCA"
+            ],
+            "Air France": [
+                "Air France",
+                "Air France",
+                "AFR"
+            ],
+            "Air India": [
+                "Air India",
+                "Air India",
+                "AIC"
+            ],
+            "Air Wisconsin": [
+                "Air Wisconsin",
+                "Air Wisconsin Airlines",
+                "AWI"
+            ],
+            "Alaska Airlines": [
+                "Alaska",
+                "Alaska Airlines",
+                "ASA"
+            ],
+            "Allegiant Air": [
+                "Allegiant",
+                "Allegiant Air",
+                "AAY"
+            ],
+            "American Airlines": [
+                "American",
+                "American Airlines",
+                "AAL"
+            ],
+            "ANA": [
+                "ANA",
+                "All Nippon Airways",
+                "ANA"
+            ],
+            "Apollo": [
+                "Apollo",
+                "Apollo Air Service",
+                "APL"
+            ],
+            "Asiana Airlines": [
+                "Asiana",
+                "Asiana Airlines",
+                "AAR"
+            ],
+            "Atlas Air": [
+                "Atlas",
+                "Atlas Air (Cargo)",
+                "GTI"
+            ],
+            "Austrian Airlines": [
+                "Austrian",
+                "Austrian Airlines",
+                "AUA"
+            ],
+            "Avelo Airlines": [
+                "Avelo",
+                "Avelo Airlines",
+                "VXP"
+            ],
+            "Avianca": [
+                "Avianca",
+                "Avianca Airlines",
+                "AVA"
+            ],
+            "Boutique Air": [
+                "Boutique",
+                "Boutique Air",
+                "BTQ"
+            ],
+            "Breeze Airways": [
+                "Moxie",
+                "Breeze Airways",
+                "MXY"
+            ],
+            "British Airways": [
+                "Speedbird",
+                "British Airways",
+                "BAW"
+            ],
+            "Cargojet Airways": [
+                "Cargojet",
+                "Cargojet Airways (Cargo)",
+                "CJT"
+            ],
+            "Cathay Pacific": [
+                "Cathay",
+                "Cathay Pacific Airways",
+                "CPA"
+            ],
+            "CommutAir": [
+                "CommutAir",
+                "CommutAir (United Express)",
+                "UCA"
+            ],
+            "Contour Airlines": [
+                "Contour",
+                "Contour Airlines",
+                "VTE"
+            ],
+            "Copa Airlines": [
+                "Copa",
+                "Copa Airlines",
+                "CMP"
+            ],
+            "Delta Air Lines": [
+                "Delta",
+                "Delta Air Lines",
+                "DAL"
+            ],
+            "DHL Aviation": [
+                "DHL",
+                "DHL Aviation (Cargo)",
+                "DHK"
+            ],
+            "Emirates": [
+                "Emirates",
+                "Emirates",
+                "UAE"
+            ],
+            "Endeavor Air": [
+                "Endeavor",
+                "Endeavor Air (Delta Connection)",
+                "EDV"
+            ],
+            "Envoy Air": [
+                "Envoy",
+                "Envoy Air (American Eagle)",
+                "ENY"
+            ],
+            "Ethiopian Airlines": [
+                "Ethiopian",
+                "Ethiopian Airlines",
+                "ETH"
+            ],
+            "Etihad Airways": [
+                "Etihad",
+                "Etihad Airways",
+                "ETD"
+            ],
+            "FedEx Express": [
+                "FedEx",
+                "FedEx Express (Cargo)",
+                "FDX"
+            ],
+            "Frontier Airlines": [
+                "Frontier",
+                "Frontier Airlines",
+                "FFT"
+            ],
+            "Iberia Airlines": [
+                "Iberia",
+                "Iberia Airlines",
+                "IBE"
+            ],
+            "ITA Airways": [
+                "ITA",
+                "ITA Airways",
+                "ITY"
+            ],
+            "JetBlue Airways": [
+                "JetBlue",
+                "JetBlue Airways",
+                "JBU"
+            ],
+            "Kalitta Air": [
+                "Kalitta",
+                "Kalitta Air (Cargo)",
+                "CKS"
+            ],
+            "Kenya Airways": [
+                "Kenya",
+                "Kenya Airways",
+                "KQA"
+            ],
+            "KLM": [
+                "KLM",
+                "KLM Royal Dutch Airlines",
+                "KLM"
+            ],
+            "Korean Air": [
+                "Korean",
+                "Korean Air",
+                "KAL"
+            ],
+            "LATAM Airlines": [
+                "LATAM",
+                "LATAM Airlines",
+                "LAN"
+            ],
+            "Lufthansa": [
+                "Lufthansa",
+                "Lufthansa",
+                "DLH"
+            ],
+            "Mesa Airlines": [
+                "Mesa",
+                "Mesa Airlines (United Express / American Eagle)",
+                "ASH"
+            ],
+            "Piedmont Airlines": [
+                "Piedmont",
+                "Piedmont Airlines (American Eagle)",
+                "PDT"
+            ],
+            "Porter Airlines": [
+                "Porter",
+                "Porter Airlines",
+                "POE"
+            ],
+            "Prime Air": [
+                "Amazon",
+                "Amazon Prime Air (Cargo)",
+                "MZN"
+            ],
+            "PSA Airlines": [
+                "PSA",
+                "PSA Airlines (American Eagle)",
+                "JIA"
+            ],
+            "Qatar Airways": [
+                "Qatar",
+                "Qatar Airways",
+                "QTR"
+            ],
+            "Republic Airways": [
+                "Republic",
+                "Republic Airways (United/Delta/American)",
+                "RPA"
+            ],
+            "Royal Air Maroc": [
+                "Royal Air Maroc",
+                "Royal Air Maroc",
+                "RAM"
+            ],
+            "SAS": [
+                "Scandi",
+                "Scandinavian Airlines",
+                "SAS"
+            ],
+            "Saudia": [
+                "Saudia",
+                "Saudi Arabian Airlines",
+                "SVA"
+            ],
+            "Singapore Airlines": [
+                "Singapore",
+                "Singapore Airlines",
+                "SIA"
+            ],
+            "SkyWest Airlines": [
+                "SkyWest",
+                "SkyWest Airlines (Delta/United)",
+                "SKW"
+            ],
+            "Southern Airways Express": [
+                "Southern",
+                "Southern Airways Express",
+                "FDY"
+            ],
+            "Southwest Airlines": [
+                "Southwest",
+                "Southwest Airlines",
+                "SWA"
+            ],
+            "Sun Country Airlines": [
+                "Sun Country",
+                "Sun Country Airlines",
+                "SCX"
+            ],
+            "Swiss International": [
+                "Swiss",
+                "Swiss International Air Lines",
+                "SWR"
+            ],
+            "TAP Air Portugal": [
+                "TAP",
+                "TAP Air Portugal",
+                "TAP"
+            ],
+            "Turkish Airlines": [
+                "Turkish",
+                "Turkish Airlines",
+                "THY"
+            ],
+            "United Airlines": [
+                "United",
+                "United Airlines",
+                "UAL"
+            ],
+            "UPS Airlines": [
+                "UPS",
+                "UPS Airlines (Cargo)",
+                "UPS"
+            ],
+            "Virgin Atlantic": [
+                "Virgin",
+                "Virgin Atlantic Airways",
+                "VIR"
+            ],
+            "Volaris": [
+                "Volaris",
+                "Volaris Airlines",
+                "VOI"
+            ],
+            "WestJet": [
+                "WestJet",
+                "WestJet Airlines",
+                "WJA"
+            ]
+        }
+    },
+    "Weather Information": {
+        "category": "Weather Information",
+        "source_reference": "ICAO Annex 3 / FAA AIM 7-1-1 (METAR/SIGMET)",
+        "keywords": [
+            "IMC",
+            "METAR",
+            "SIGMET",
+            "VMC",
+            "advisory",
+            "altimeter",
+            "cumulus",
+            "dew point",
+            "gust",
+            "hail",
+            "icing",
+            "lightning",
+            "precipitation",
+            "pressure",
+            "rain",
+            "shear",
+            "snow",
+            "storm",
+            "temperature",
+            "turbulence",
+            "visibility",
+            "weather",
+            "wind"
+        ],
+        "related_patterns": [],
+        "airline_callsigns": {
+            "AeroMexico": [
+                "AeroMexico",
+                "AeroMexico",
+                "AMX"
+            ],
+            "AeroUnion": [
+                "AeroUnion",
+                "AeroUnion Cargo",
+                "MXU"
+            ],
+            "Aer Lingus": [
+                "Aer Lingus",
+                "Aer Lingus",
+                "EIN"
+            ],
+            "Air Canada": [
+                "Air Canada",
+                "Air Canada",
+                "ACA"
+            ],
+            "Air China": [
+                "Air China",
+                "Air China",
+                "CCA"
+            ],
+            "Air France": [
+                "Air France",
+                "Air France",
+                "AFR"
+            ],
+            "Air India": [
+                "Air India",
+                "Air India",
+                "AIC"
+            ],
+            "Air Wisconsin": [
+                "Air Wisconsin",
+                "Air Wisconsin Airlines",
+                "AWI"
+            ],
+            "Alaska Airlines": [
+                "Alaska",
+                "Alaska Airlines",
+                "ASA"
+            ],
+            "Allegiant Air": [
+                "Allegiant",
+                "Allegiant Air",
+                "AAY"
+            ],
+            "American Airlines": [
+                "American",
+                "American Airlines",
+                "AAL"
+            ],
+            "ANA": [
+                "ANA",
+                "All Nippon Airways",
+                "ANA"
+            ],
+            "Apollo": [
+                "Apollo",
+                "Apollo Air Service",
+                "APL"
+            ],
+            "Asiana Airlines": [
+                "Asiana",
+                "Asiana Airlines",
+                "AAR"
+            ],
+            "Atlas Air": [
+                "Atlas",
+                "Atlas Air (Cargo)",
+                "GTI"
+            ],
+            "Austrian Airlines": [
+                "Austrian",
+                "Austrian Airlines",
+                "AUA"
+            ],
+            "Avelo Airlines": [
+                "Avelo",
+                "Avelo Airlines",
+                "VXP"
+            ],
+            "Avianca": [
+                "Avianca",
+                "Avianca Airlines",
+                "AVA"
+            ],
+            "Boutique Air": [
+                "Boutique",
+                "Boutique Air",
+                "BTQ"
+            ],
+            "Breeze Airways": [
+                "Moxie",
+                "Breeze Airways",
+                "MXY"
+            ],
+            "British Airways": [
+                "Speedbird",
+                "British Airways",
+                "BAW"
+            ],
+            "Cargojet Airways": [
+                "Cargojet",
+                "Cargojet Airways (Cargo)",
+                "CJT"
+            ],
+            "Cathay Pacific": [
+                "Cathay",
+                "Cathay Pacific Airways",
+                "CPA"
+            ],
+            "CommutAir": [
+                "CommutAir",
+                "CommutAir (United Express)",
+                "UCA"
+            ],
+            "Contour Airlines": [
+                "Contour",
+                "Contour Airlines",
+                "VTE"
+            ],
+            "Copa Airlines": [
+                "Copa",
+                "Copa Airlines",
+                "CMP"
+            ],
+            "Delta Air Lines": [
+                "Delta",
+                "Delta Air Lines",
+                "DAL"
+            ],
+            "DHL Aviation": [
+                "DHL",
+                "DHL Aviation (Cargo)",
+                "DHK"
+            ],
+            "Emirates": [
+                "Emirates",
+                "Emirates",
+                "UAE"
+            ],
+            "Endeavor Air": [
+                "Endeavor",
+                "Endeavor Air (Delta Connection)",
+                "EDV"
+            ],
+            "Envoy Air": [
+                "Envoy",
+                "Envoy Air (American Eagle)",
+                "ENY"
+            ],
+            "Ethiopian Airlines": [
+                "Ethiopian",
+                "Ethiopian Airlines",
+                "ETH"
+            ],
+            "Etihad Airways": [
+                "Etihad",
+                "Etihad Airways",
+                "ETD"
+            ],
+            "FedEx Express": [
+                "FedEx",
+                "FedEx Express (Cargo)",
+                "FDX"
+            ],
+            "Frontier Airlines": [
+                "Frontier",
+                "Frontier Airlines",
+                "FFT"
+            ],
+            "Iberia Airlines": [
+                "Iberia",
+                "Iberia Airlines",
+                "IBE"
+            ],
+            "ITA Airways": [
+                "ITA",
+                "ITA Airways",
+                "ITY"
+            ],
+            "JetBlue Airways": [
+                "JetBlue",
+                "JetBlue Airways",
+                "JBU"
+            ],
+            "Kalitta Air": [
+                "Kalitta",
+                "Kalitta Air (Cargo)",
+                "CKS"
+            ],
+            "Kenya Airways": [
+                "Kenya",
+                "Kenya Airways",
+                "KQA"
+            ],
+            "KLM": [
+                "KLM",
+                "KLM Royal Dutch Airlines",
+                "KLM"
+            ],
+            "Korean Air": [
+                "Korean",
+                "Korean Air",
+                "KAL"
+            ],
+            "LATAM Airlines": [
+                "LATAM",
+                "LATAM Airlines",
+                "LAN"
+            ],
+            "Lufthansa": [
+                "Lufthansa",
+                "Lufthansa",
+                "DLH"
+            ],
+            "Mesa Airlines": [
+                "Mesa",
+                "Mesa Airlines (United Express / American Eagle)",
+                "ASH"
+            ],
+            "Piedmont Airlines": [
+                "Piedmont",
+                "Piedmont Airlines (American Eagle)",
+                "PDT"
+            ],
+            "Porter Airlines": [
+                "Porter",
+                "Porter Airlines",
+                "POE"
+            ],
+            "Prime Air": [
+                "Amazon",
+                "Amazon Prime Air (Cargo)",
+                "MZN"
+            ],
+            "PSA Airlines": [
+                "PSA",
+                "PSA Airlines (American Eagle)",
+                "JIA"
+            ],
+            "Qatar Airways": [
+                "Qatar",
+                "Qatar Airways",
+                "QTR"
+            ],
+            "Republic Airways": [
+                "Republic",
+                "Republic Airways (United/Delta/American)",
+                "RPA"
+            ],
+            "Royal Air Maroc": [
+                "Royal Air Maroc",
+                "Royal Air Maroc",
+                "RAM"
+            ],
+            "SAS": [
+                "Scandi",
+                "Scandinavian Airlines",
+                "SAS"
+            ],
+            "Saudia": [
+                "Saudia",
+                "Saudi Arabian Airlines",
+                "SVA"
+            ],
+            "Singapore Airlines": [
+                "Singapore",
+                "Singapore Airlines",
+                "SIA"
+            ],
+            "SkyWest Airlines": [
+                "SkyWest",
+                "SkyWest Airlines (Delta/United)",
+                "SKW"
+            ],
+            "Southern Airways Express": [
+                "Southern",
+                "Southern Airways Express",
+                "FDY"
+            ],
+            "Southwest Airlines": [
+                "Southwest",
+                "Southwest Airlines",
+                "SWA"
+            ],
+            "Sun Country Airlines": [
+                "Sun Country",
+                "Sun Country Airlines",
+                "SCX"
+            ],
+            "Swiss International": [
+                "Swiss",
+                "Swiss International Air Lines",
+                "SWR"
+            ],
+            "TAP Air Portugal": [
+                "TAP",
+                "TAP Air Portugal",
+                "TAP"
+            ],
+            "Turkish Airlines": [
+                "Turkish",
+                "Turkish Airlines",
+                "THY"
+            ],
+            "United Airlines": [
+                "United",
+                "United Airlines",
+                "UAL"
+            ],
+            "UPS Airlines": [
+                "UPS",
+                "UPS Airlines (Cargo)",
+                "UPS"
+            ],
+            "Virgin Atlantic": [
+                "Virgin",
+                "Virgin Atlantic Airways",
+                "VIR"
+            ],
+            "Volaris": [
+                "Volaris",
+                "Volaris Airlines",
+                "VOI"
+            ],
+            "WestJet": [
+                "WestJet",
+                "WestJet Airlines",
+                "WJA"
+            ]
+        }
+    },
+    "Miscellaneous": {
+        "category": "Miscellaneous",
+        "source_reference": "ICAO Doc 9432 / FAA Pilot-Controller Glossary",
+        "keywords": [
+            "affirm",
+            "alpha",
+            "bravo",
+            "charlie",
+            "cleared for takeoff",
+            "delta",
+            "foxtrot",
+            "ground",
+            "holding",
+            "hotel",
+            "juliet",
+            "kilo",
+            "landing",
+            "negative",
+            "pushback",
+            "ready",
+            "repeat",
+            "runway",
+            "say again",
+            "standby",
+            "taxi",
+            "unable"
+        ],
+        "related_patterns": [],
+        "airline_callsigns": {
+            "AeroMexico": [
+                "AeroMexico",
+                "AeroMexico",
+                "AMX"
+            ],
+            "AeroUnion": [
+                "AeroUnion",
+                "AeroUnion Cargo",
+                "MXU"
+            ],
+            "Aer Lingus": [
+                "Aer Lingus",
+                "Aer Lingus",
+                "EIN"
+            ],
+            "Air Canada": [
+                "Air Canada",
+                "Air Canada",
+                "ACA"
+            ],
+            "Air China": [
+                "Air China",
+                "Air China",
+                "CCA"
+            ],
+            "Air France": [
+                "Air France",
+                "Air France",
+                "AFR"
+            ],
+            "Air India": [
+                "Air India",
+                "Air India",
+                "AIC"
+            ],
+            "Air Wisconsin": [
+                "Air Wisconsin",
+                "Air Wisconsin Airlines",
+                "AWI"
+            ],
+            "Alaska Airlines": [
+                "Alaska",
+                "Alaska Airlines",
+                "ASA"
+            ],
+            "Allegiant Air": [
+                "Allegiant",
+                "Allegiant Air",
+                "AAY"
+            ],
+            "American Airlines": [
+                "American",
+                "American Airlines",
+                "AAL"
+            ],
+            "ANA": [
+                "ANA",
+                "All Nippon Airways",
+                "ANA"
+            ],
+            "Apollo": [
+                "Apollo",
+                "Apollo Air Service",
+                "APL"
+            ],
+            "Asiana Airlines": [
+                "Asiana",
+                "Asiana Airlines",
+                "AAR"
+            ],
+            "Atlas Air": [
+                "Atlas",
+                "Atlas Air (Cargo)",
+                "GTI"
+            ],
+            "Austrian Airlines": [
+                "Austrian",
+                "Austrian Airlines",
+                "AUA"
+            ],
+            "Avelo Airlines": [
+                "Avelo",
+                "Avelo Airlines",
+                "VXP"
+            ],
+            "Avianca": [
+                "Avianca",
+                "Avianca Airlines",
+                "AVA"
+            ],
+            "Boutique Air": [
+                "Boutique",
+                "Boutique Air",
+                "BTQ"
+            ],
+            "Breeze Airways": [
+                "Moxie",
+                "Breeze Airways",
+                "MXY"
+            ],
+            "British Airways": [
+                "Speedbird",
+                "British Airways",
+                "BAW"
+            ],
+            "Cargojet Airways": [
+                "Cargojet",
+                "Cargojet Airways (Cargo)",
+                "CJT"
+            ],
+            "Cathay Pacific": [
+                "Cathay",
+                "Cathay Pacific Airways",
+                "CPA"
+            ],
+            "CommutAir": [
+                "CommutAir",
+                "CommutAir (United Express)",
+                "UCA"
+            ],
+            "Contour Airlines": [
+                "Contour",
+                "Contour Airlines",
+                "VTE"
+            ],
+            "Copa Airlines": [
+                "Copa",
+                "Copa Airlines",
+                "CMP"
+            ],
+            "Delta Air Lines": [
+                "Delta",
+                "Delta Air Lines",
+                "DAL"
+            ],
+            "DHL Aviation": [
+                "DHL",
+                "DHL Aviation (Cargo)",
+                "DHK"
+            ],
+            "Emirates": [
+                "Emirates",
+                "Emirates",
+                "UAE"
+            ],
+            "Endeavor Air": [
+                "Endeavor",
+                "Endeavor Air (Delta Connection)",
+                "EDV"
+            ],
+            "Envoy Air": [
+                "Envoy",
+                "Envoy Air (American Eagle)",
+                "ENY"
+            ],
+            "Ethiopian Airlines": [
+                "Ethiopian",
+                "Ethiopian Airlines",
+                "ETH"
+            ],
+            "Etihad Airways": [
+                "Etihad",
+                "Etihad Airways",
+                "ETD"
+            ],
+            "FedEx Express": [
+                "FedEx",
+                "FedEx Express (Cargo)",
+                "FDX"
+            ],
+            "Frontier Airlines": [
+                "Frontier",
+                "Frontier Airlines",
+                "FFT"
+            ],
+            "Iberia Airlines": [
+                "Iberia",
+                "Iberia Airlines",
+                "IBE"
+            ],
+            "ITA Airways": [
+                "ITA",
+                "ITA Airways",
+                "ITY"
+            ],
+            "JetBlue Airways": [
+                "JetBlue",
+                "JetBlue Airways",
+                "JBU"
+            ],
+            "Kalitta Air": [
+                "Kalitta",
+                "Kalitta Air (Cargo)",
+                "CKS"
+            ],
+            "Kenya Airways": [
+                "Kenya",
+                "Kenya Airways",
+                "KQA"
+            ],
+            "KLM": [
+                "KLM",
+                "KLM Royal Dutch Airlines",
+                "KLM"
+            ],
+            "Korean Air": [
+                "Korean",
+                "Korean Air",
+                "KAL"
+            ],
+            "LATAM Airlines": [
+                "LATAM",
+                "LATAM Airlines",
+                "LAN"
+            ],
+            "Lufthansa": [
+                "Lufthansa",
+                "Lufthansa",
+                "DLH"
+            ],
+            "Mesa Airlines": [
+                "Mesa",
+                "Mesa Airlines (United Express / American Eagle)",
+                "ASH"
+            ],
+            "Piedmont Airlines": [
+                "Piedmont",
+                "Piedmont Airlines (American Eagle)",
+                "PDT"
+            ],
+            "Porter Airlines": [
+                "Porter",
+                "Porter Airlines",
+                "POE"
+            ],
+            "Prime Air": [
+                "Amazon",
+                "Amazon Prime Air (Cargo)",
+                "MZN"
+            ],
+            "PSA Airlines": [
+                "PSA",
+                "PSA Airlines (American Eagle)",
+                "JIA"
+            ],
+            "Qatar Airways": [
+                "Qatar",
+                "Qatar Airways",
+                "QTR"
+            ],
+            "Republic Airways": [
+                "Republic",
+                "Republic Airways (United/Delta/American)",
+                "RPA"
+            ],
+            "Royal Air Maroc": [
+                "Royal Air Maroc",
+                "Royal Air Maroc",
+                "RAM"
+            ],
+            "SAS": [
+                "Scandi",
+                "Scandinavian Airlines",
+                "SAS"
+            ],
+            "Saudia": [
+                "Saudia",
+                "Saudi Arabian Airlines",
+                "SVA"
+            ],
+            "Singapore Airlines": [
+                "Singapore",
+                "Singapore Airlines",
+                "SIA"
+            ],
+            "SkyWest Airlines": [
+                "SkyWest",
+                "SkyWest Airlines (Delta/United)",
+                "SKW"
+            ],
+            "Southern Airways Express": [
+                "Southern",
+                "Southern Airways Express",
+                "FDY"
+            ],
+            "Southwest Airlines": [
+                "Southwest",
+                "Southwest Airlines",
+                "SWA"
+            ],
+            "Sun Country Airlines": [
+                "Sun Country",
+                "Sun Country Airlines",
+                "SCX"
+            ],
+            "Swiss International": [
+                "Swiss",
+                "Swiss International Air Lines",
+                "SWR"
+            ],
+            "TAP Air Portugal": [
+                "TAP",
+                "TAP Air Portugal",
+                "TAP"
+            ],
+            "Turkish Airlines": [
+                "Turkish",
+                "Turkish Airlines",
+                "THY"
+            ],
+            "United Airlines": [
+                "United",
+                "United Airlines",
+                "UAL"
+            ],
+            "UPS Airlines": [
+                "UPS",
+                "UPS Airlines (Cargo)",
+                "UPS"
+            ],
+            "Virgin Atlantic": [
+                "Virgin",
+                "Virgin Atlantic Airways",
+                "VIR"
+            ],
+            "Volaris": [
+                "Volaris",
+                "Volaris Airlines",
+                "VOI"
+            ],
+            "WestJet": [
+                "WestJet",
+                "WestJet Airlines",
+                "WJA"
+            ]
+        }
+    },
+    "Emergency Declarations": {
+        "category": "Emergency Declarations",
+        "source_reference": "FAA JO 7110.65 \u00a710-2-4, 6-3-1 / ICAO Doc 4444 \u00a715.3 / Annex 11 \u00a72.27",
+        "keywords": [
+            "mayday",
+            "pan pan",
+            "emergency",
+            "declaring emergency",
+            "engine failure",
+            "smoke",
+            "fire on board",
+            "medical emergency",
+            "fuel emergency",
+            "unable maintain altitude",
+            "priority handling",
+            "lost communications",
+            "squawk 7700",
+            "transponder 7700",
+            "request immediate descent"
+        ],
+        "related_patterns": [
+            "declaring an emergency",
+            "mayday mayday",
+            "pan pan pan",
+            "lost engine",
+            "smoke in cockpit",
+            "fire in cabin",
+            "fuel low",
+            "need priority landing",
+            "unable to maintain altitude",
+            "squawking 7700"
+        ],
+        "airline_callsigns": {
+            "AeroMexico": [
+                "AeroMexico",
+                "AeroMexico",
+                "AMX"
+            ],
+            "AeroUnion": [
+                "AeroUnion",
+                "AeroUnion Cargo",
+                "MXU"
+            ],
+            "Aer Lingus": [
+                "Aer Lingus",
+                "Aer Lingus",
+                "EIN"
+            ],
+            "Air Canada": [
+                "Air Canada",
+                "Air Canada",
+                "ACA"
+            ],
+            "Air China": [
+                "Air China",
+                "Air China",
+                "CCA"
+            ],
+            "Air France": [
+                "Air France",
+                "Air France",
+                "AFR"
+            ],
+            "Air India": [
+                "Air India",
+                "Air India",
+                "AIC"
+            ],
+            "Air Wisconsin": [
+                "Air Wisconsin",
+                "Air Wisconsin Airlines",
+                "AWI"
+            ],
+            "Alaska Airlines": [
+                "Alaska",
+                "Alaska Airlines",
+                "ASA"
+            ],
+            "Allegiant Air": [
+                "Allegiant",
+                "Allegiant Air",
+                "AAY"
+            ],
+            "American Airlines": [
+                "American",
+                "American Airlines",
+                "AAL"
+            ],
+            "ANA": [
+                "ANA",
+                "All Nippon Airways",
+                "ANA"
+            ],
+            "Apollo": [
+                "Apollo",
+                "Apollo Air Service",
+                "APL"
+            ],
+            "Asiana Airlines": [
+                "Asiana",
+                "Asiana Airlines",
+                "AAR"
+            ],
+            "Atlas Air": [
+                "Atlas",
+                "Atlas Air (Cargo)",
+                "GTI"
+            ],
+            "Austrian Airlines": [
+                "Austrian",
+                "Austrian Airlines",
+                "AUA"
+            ],
+            "Avelo Airlines": [
+                "Avelo",
+                "Avelo Airlines",
+                "VXP"
+            ],
+            "Avianca": [
+                "Avianca",
+                "Avianca Airlines",
+                "AVA"
+            ],
+            "Boutique Air": [
+                "Boutique",
+                "Boutique Air",
+                "BTQ"
+            ],
+            "Breeze Airways": [
+                "Moxie",
+                "Breeze Airways",
+                "MXY"
+            ],
+            "British Airways": [
+                "Speedbird",
+                "British Airways",
+                "BAW"
+            ],
+            "Cargojet Airways": [
+                "Cargojet",
+                "Cargojet Airways (Cargo)",
+                "CJT"
+            ],
+            "Cathay Pacific": [
+                "Cathay",
+                "Cathay Pacific Airways",
+                "CPA"
+            ],
+            "CommutAir": [
+                "CommutAir",
+                "CommutAir (United Express)",
+                "UCA"
+            ],
+            "Contour Airlines": [
+                "Contour",
+                "Contour Airlines",
+                "VTE"
+            ],
+            "Copa Airlines": [
+                "Copa",
+                "Copa Airlines",
+                "CMP"
+            ],
+            "Delta Air Lines": [
+                "Delta",
+                "Delta Air Lines",
+                "DAL"
+            ],
+            "DHL Aviation": [
+                "DHL",
+                "DHL Aviation (Cargo)",
+                "DHK"
+            ],
+            "Emirates": [
+                "Emirates",
+                "Emirates",
+                "UAE"
+            ],
+            "Endeavor Air": [
+                "Endeavor",
+                "Endeavor Air (Delta Connection)",
+                "EDV"
+            ],
+            "Envoy Air": [
+                "Envoy",
+                "Envoy Air (American Eagle)",
+                "ENY"
+            ],
+            "Ethiopian Airlines": [
+                "Ethiopian",
+                "Ethiopian Airlines",
+                "ETH"
+            ],
+            "Etihad Airways": [
+                "Etihad",
+                "Etihad Airways",
+                "ETD"
+            ],
+            "FedEx Express": [
+                "FedEx",
+                "FedEx Express (Cargo)",
+                "FDX"
+            ],
+            "Frontier Airlines": [
+                "Frontier",
+                "Frontier Airlines",
+                "FFT"
+            ],
+            "Iberia Airlines": [
+                "Iberia",
+                "Iberia Airlines",
+                "IBE"
+            ],
+            "ITA Airways": [
+                "ITA",
+                "ITA Airways",
+                "ITY"
+            ],
+            "JetBlue Airways": [
+                "JetBlue",
+                "JetBlue Airways",
+                "JBU"
+            ],
+            "Kalitta Air": [
+                "Kalitta",
+                "Kalitta Air (Cargo)",
+                "CKS"
+            ],
+            "Kenya Airways": [
+                "Kenya",
+                "Kenya Airways",
+                "KQA"
+            ],
+            "KLM": [
+                "KLM",
+                "KLM Royal Dutch Airlines",
+                "KLM"
+            ],
+            "Korean Air": [
+                "Korean",
+                "Korean Air",
+                "KAL"
+            ],
+            "LATAM Airlines": [
+                "LATAM",
+                "LATAM Airlines",
+                "LAN"
+            ],
+            "Lufthansa": [
+                "Lufthansa",
+                "Lufthansa",
+                "DLH"
+            ],
+            "Mesa Airlines": [
+                "Mesa",
+                "Mesa Airlines (United Express / American Eagle)",
+                "ASH"
+            ],
+            "Piedmont Airlines": [
+                "Piedmont",
+                "Piedmont Airlines (American Eagle)",
+                "PDT"
+            ],
+            "Porter Airlines": [
+                "Porter",
+                "Porter Airlines",
+                "POE"
+            ],
+            "Prime Air": [
+                "Amazon",
+                "Amazon Prime Air (Cargo)",
+                "MZN"
+            ],
+            "PSA Airlines": [
+                "PSA",
+                "PSA Airlines (American Eagle)",
+                "JIA"
+            ],
+            "Qatar Airways": [
+                "Qatar",
+                "Qatar Airways",
+                "QTR"
+            ],
+            "Republic Airways": [
+                "Republic",
+                "Republic Airways (United/Delta/American)",
+                "RPA"
+            ],
+            "Royal Air Maroc": [
+                "Royal Air Maroc",
+                "Royal Air Maroc",
+                "RAM"
+            ],
+            "SAS": [
+                "Scandi",
+                "Scandinavian Airlines",
+                "SAS"
+            ],
+            "Saudia": [
+                "Saudia",
+                "Saudi Arabian Airlines",
+                "SVA"
+            ],
+            "Singapore Airlines": [
+                "Singapore",
+                "Singapore Airlines",
+                "SIA"
+            ],
+            "SkyWest Airlines": [
+                "SkyWest",
+                "SkyWest Airlines (Delta/United)",
+                "SKW"
+            ],
+            "Southern Airways Express": [
+                "Southern",
+                "Southern Airways Express",
+                "FDY"
+            ],
+            "Southwest Airlines": [
+                "Southwest",
+                "Southwest Airlines",
+                "SWA"
+            ],
+            "Sun Country Airlines": [
+                "Sun Country",
+                "Sun Country Airlines",
+                "SCX"
+            ],
+            "Swiss International": [
+                "Swiss",
+                "Swiss International Air Lines",
+                "SWR"
+            ],
+            "TAP Air Portugal": [
+                "TAP",
+                "TAP Air Portugal",
+                "TAP"
+            ],
+            "Turkish Airlines": [
+                "Turkish",
+                "Turkish Airlines",
+                "THY"
+            ],
+            "United Airlines": [
+                "United",
+                "United Airlines",
+                "UAL"
+            ],
+            "UPS Airlines": [
+                "UPS",
+                "UPS Airlines (Cargo)",
+                "UPS"
+            ],
+            "Virgin Atlantic": [
+                "Virgin",
+                "Virgin Atlantic Airways",
+                "VIR"
+            ],
+            "Volaris": [
+                "Volaris",
+                "Volaris Airlines",
+                "VOI"
+            ],
+            "WestJet": [
+                "WestJet",
+                "WestJet Airlines",
+                "WJA"
+            ]
+        }
+    }
+}

@@ -3,6 +3,7 @@ import re
 import sys
 import time
 import os
+import string
 from pathlib import Path
 from typing import Dict, List, Any, Tuple
 from difflib import SequenceMatcher
@@ -15,10 +16,116 @@ def preprocess_transcript(text: str) -> str:
     """Normalize transcript for consistent matching."""
     if not text or text.strip() == "":
         return ""
+    
     text = text.lower()
-    text = re.sub(r"[^a-z0-9\s]", " ", text)
-    text = re.sub(r"\s+", " ", text).strip()
+    
+    # Replace weird punctuation (e.g. \u3002 or ideographic full stop)
+    text = text.replace("\u3002", ".").replace("。", ".")
+    
+    # Convert spoken numbers to digits
+    text = convert_spoken_numbers(text)
+    
+    # Remove repeated single words
+    text = re.sub(r'\b(\w+)( \1\b)+', r'\1', text)
+    
+    # Remove sequences of dots like ". . . . . ." → "."
+    text = re.sub(r'(\.\s*){2,}', '. ', text)
+    
+    # Remove repeated short phrases like "thank you. thank you."
+    text = re.sub(r'(\b[\w\s]{2,20}[.!?])(\s*\1){2,}', r'\1', text)
+    
+    # Remove excessive "thank you" repetition specifically
+    text = re.sub(r'(thank you[.!?\s]*){2,}', 'thank you.', text)
+    
+    # Remove repeated numeric patterns (like "1 2 000 9" repeated)
+    text = re.sub(r'(\b[\d\s]{2,}\b)( \1)+', r'\1', text)
+    
+    # Remove unwanted copyright or annotation text
+    text = re.sub(r"©.*?(transcript|TV).*", "", text, flags=re.IGNORECASE)
+    
+    # Remove non-printable characters
+    text = re.sub(r'[^\x20-\x7E]+', ' ', text)
+    
+    # Normalize extra spaces and punctuation spacing
+    text = re.sub(r"\s+", " ", text)
+    text = re.sub(r"\s*([.,!?])\s*", r"\1 ", text)
+    text = text.strip()
+    
     return text
+
+
+def convert_spoken_numbers(text: str) -> str:
+    """Convert spoken numbers to digits for better ATC communication processing."""
+    # Dictionary mapping spoken numbers to digits
+    number_map = {
+        'zero': '0', 'oh': '0', 'o': '0',
+        'one': '1', 'won': '1',
+        'two': '2', 'too': '2',
+        'three': '3', 'tree': '3',
+        'four': '4', 'fore': '4',
+        'five': '5', 'fife': '5',
+        'six': '6',
+        'seven': '7',
+        'eight': '8', 'ate': '8',
+        'nine': '9', 'niner': '9',
+        'ten': '10',
+        'eleven': '11',
+        'twelve': '12',
+        'thirteen': '13',
+        'fourteen': '14',
+        'fifteen': '15',
+        'sixteen': '16',
+        'seventeen': '17',
+        'eighteen': '18',
+        'nineteen': '19',
+        'twenty': '20',
+        'thirty': '30',
+        'forty': '40',
+        'fifty': '50',
+        'sixty': '60',
+        'seventy': '70',
+        'eighty': '80',
+        'ninety': '90',
+        'hundred': '00',
+        'thousand': '000'
+    }
+    
+    # Words that should NOT be converted even if they sound like numbers
+    # These are common ATC words that should remain as words
+    preserve_words = {
+        'to', 'for', 'at', 'on', 'in', 'of', 'the', 'a', 'an', 'and', 'or', 'but',
+        'with', 'by', 'from', 'up', 'down', 'out', 'off', 'over', 'under', 'through',
+        'contact', 'switch', 'change', 'monitor', 'handoff', 'go', 'call', 'report',
+        'cleared', 'cleared', 'maintain', 'expect', 'cross', 'level', 'altitude',
+        'heading', 'direct', 'vector', 'course', 'runway', 'frequency', 'tower',
+        'approach', 'departure', 'ground', 'clearance', 'takeoff', 'landing',
+        'arrival', 'final', 'weather', 'wind', 'visibility', 'ceiling', 'clouds',
+        'traffic', 'aircraft', 'caution', 'wake', 'turbulence', 'heavy', 'light',
+        'emergency', 'mayday', 'pan', 'medical', 'fuel', 'engine', 'fire', 'failure',
+        'unable', 'comply', 'declare', 'lost', 'communications', 'radio', 'hydraulic',
+        'descent', 'landing', 'situation', 'continue', 'temperature', 'dew', 'point',
+        'pressure', 'altimeter', 'current', 'conditions', 'direction', 'speed',
+        'precipitation', 'alert', 'conflict', 'information', 'line', 'wait', 'short',
+        'centerline', 'closed', 'lights', 'condition', 'use', 'in', 'use'
+    }
+    
+    # Split text into words
+    words = text.split()
+    converted_words = []
+    
+    for word in words:
+        # Clean word of punctuation for matching
+        clean_word = re.sub(r'[^a-z]', '', word.lower())
+        
+        # Only convert if it's in the number map AND not in preserve words
+        if clean_word in number_map and clean_word not in preserve_words:
+            # Replace with digit(s)
+            converted_words.append(number_map[clean_word])
+        else:
+            # Keep original word
+            converted_words.append(word)
+    
+    return ' '.join(converted_words)
 
 
 # ----------------------------- Utilities ----------------------------- #
@@ -35,6 +142,35 @@ def generate_ngrams(words: List[str], n: int) -> List[str]:
 
 
 # ------------------------------ Categorizer ------------------------------ #
+def load_unified_config(config_path: Path) -> Tuple[dict, dict]:
+    """Load unified configuration file with categories, keywords, and callsigns."""
+    with open(config_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    
+    # Extract category keywords
+    category_keywords = {}
+    for category_name, category_data in data.items():
+        keywords = category_data.get("keywords", [])
+        related_patterns = category_data.get("related_patterns", [])
+        
+        # Combine keywords and related patterns
+        all_keywords = keywords + related_patterns
+        kws_lower = [kw.lower() for kw in all_keywords]
+        category_keywords[category_name] = sorted(kws_lower, key=lambda s: len(s.split()), reverse=True)
+    
+    # Extract airline callsigns from the first category (they're the same in all)
+    # Flatten into {alias_lower: airline_name}
+    callsigns = {}
+    for category_name, category_data in data.items():
+        airline_callsigns = category_data.get("airline_callsigns", {})
+        for airline, aliases in airline_callsigns.items():
+            for alias in aliases:
+                callsigns[alias.lower()] = airline
+        break  # Only need to process once since all categories have the same callsigns
+    
+    return category_keywords, callsigns
+
+
 def load_dictionaries(dict_path: Path) -> dict:
     """Load and normalize category keywords from JSON file."""
     with open(dict_path, "r", encoding="utf-8") as f:
@@ -64,43 +200,86 @@ def load_callsigns(callsign_path: Path) -> dict:
 def detect_callsign(text: str, callsigns: dict) -> str:
     """Return the airline name if any of its aliases or codes appear in transcript."""
     if not text:
-        return ""
+        return "Unknown"
     t = preprocess_transcript(text)
-
+    
+    # Try exact matches with word boundaries
     for alias, airline in callsigns.items():
         if re.search(rf"\b{re.escape(alias.lower())}\b", t):
             return airline
+    
+    # Try substring matches for callsigns
+    for alias, airline in callsigns.items():
+        if alias.lower() in t:
+            return airline
+    
     return "Unknown"
 
 
-def categorize_communication(text: str, category_keywords: dict, fuzzy_threshold: float = 0.85) -> str:
-    """Return communication category using fuzzy phrase matching."""
+def categorize_communication(text: str, category_keywords: dict, fuzzy_threshold: float = 0.75) -> str:
+    """Return communication category using exact keyword matching (first match wins)."""
     if not text or text.strip() == "":
-        return "Miscellaneous"
+        return "General Communications"
 
-    t = preprocess_transcript(text)
-    words = t.split()
-
-    best_match: Tuple[str, float, str] = (None, 0.0, "")
-    for category, keywords in category_keywords.items():
+    # Normalize transcript: lowercase and remove punctuation
+    text_lower = preprocess_transcript(text).lower()
+    # Remove punctuation for matching
+    text_clean = text_lower.translate(str.maketrans('', '', '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'))
+    
+    # Separate "Miscellaneous" from other categories to check it last
+    other_categories = {k: v for k, v in category_keywords.items() if k.lower() != "miscellaneous"}
+    misc_keywords = category_keywords.get("Miscellaneous", [])
+    
+    # Check specific categories first (not Miscellaneous)
+    for category, keywords in other_categories.items():
         for keyword in keywords:
-            if keyword in t:
-                return category.replace("_", " ").title()
+            # Clean keyword: lowercase and remove punctuation
+            kw_clean = keyword.lower().translate(str.maketrans('', '', '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'))
+            
+            # Check if keyword appears in text
+            if kw_clean in text_clean:
+                return category
+    
+    # Then check Miscellaneous category if it exists
+    if misc_keywords:
+        for keyword in misc_keywords:
+            kw_clean = keyword.lower().translate(str.maketrans('', '', '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'))
+            if kw_clean in text_clean:
+                return "Miscellaneous"
+    
+    # Fallback if no keyword matches
+    return "General Communications"
 
-            kw_words = keyword.split()
-            n = len(kw_words)
-            ngrams = generate_ngrams(words, n)
 
-            for ng in ngrams:
-                score = similarity(keyword, ng)
-                if score > best_match[1]:
-                    best_match = (category, score, keyword)
-                if score >= fuzzy_threshold:
-                    return category.replace("_", " ").title()
-
-    if best_match[1] >= 0.75:
-        return best_match[0].replace("_", " ").title()
-    return "Miscellaneous"
+def _is_semantically_similar(keyword: str, phrase: str) -> bool:
+    """Check if two phrases are semantically similar, not just character-wise similar."""
+    kw_words = keyword.split()
+    ph_words = phrase.split()
+    
+    # If both phrases contain numbers, they should be very similar to match
+    kw_has_numbers = any(word.isdigit() for word in kw_words)
+    ph_has_numbers = any(word.isdigit() for word in ph_words)
+    
+    if kw_has_numbers and ph_has_numbers:
+        # For phrases with numbers, require exact word matches for numbers
+        kw_numbers = [word for word in kw_words if word.isdigit()]
+        ph_numbers = [word for word in ph_words if word.isdigit()]
+        if kw_numbers != ph_numbers:
+            return False
+    
+    # Check if the alphabetic words are similar
+    kw_alpha = [word for word in kw_words if word.isalpha()]
+    ph_alpha = [word for word in ph_words if word.isalpha()]
+    
+    if len(kw_alpha) != len(ph_alpha):
+        return False
+    
+    # Check if each alphabetic word is similar
+    for kw_word, ph_word in zip(kw_alpha, ph_alpha):
+        if similarity(kw_word, ph_word) < 0.8:
+            return False
+    
+    return True
 
 
 # ------------------------------ Duplicate Detection ------------------------------ #
@@ -140,9 +319,10 @@ def setup_paths():
     output_dir.mkdir(parents=True, exist_ok=True)
     
     paths = {
+        "unified_config": config_dir / "final_aviation_ultimate_with_emergency.json",
         "category_dict": config_dir / "category_dict.json",
         "callsign": config_dir / "airline_callsign.json",
-        "input": input_dir / "transcription_results.json",
+        "input": input_dir / "transcripts.json",
         "output": output_dir / "categorized_transcription_results.json"
     }
     
@@ -166,7 +346,7 @@ def load_existing_categorized_data(output_path: Path) -> Tuple[List[Dict[str, An
         airline_counts = {}
         
         for item in items:
-            category = item.get("category", "Miscellaneous")
+            category = item.get("category", "General Communications")
             airline = item.get("airline", "Unknown")
             
             counts[category] = counts.get(category, 0) + 1
@@ -192,7 +372,7 @@ def append_categorized_data(new_items: List[Dict[str, Any]], output_path: Path,
     
     # Only update counts for new items (existing counts are already correct)
     for item in new_items:
-        category = item.get("category", "Miscellaneous")
+        category = item.get("category", "General Communications")
         airline = item.get("airline", "Unknown")
         counts[category] = counts.get(category, 0) + 1
         airline_counts[airline] = airline_counts.get(airline, 0) + 1
@@ -204,8 +384,7 @@ def append_categorized_data(new_items: List[Dict[str, Any]], output_path: Path,
             "last_updated_utc": new_items[-1].get("timestamp_utc", "") if new_items else "",
             "total_items": len(all_items),
             "duplicate_count": duplicate_count,
-            "category_dict": str(output_path.parent.parent.parent.parent / "config" / "category_dict.json"),
-            "callsign_dict": str(output_path.parent.parent.parent.parent / "config" / "airline_callsign.json")
+            "unified_config": str(output_path.parent.parent.parent.parent / "config" / "final_aviation_ultimate_with_emergency.json")
         },
         "items": all_items
     }
@@ -247,6 +426,7 @@ class TranscriptionFileHandler(FileSystemEventHandler):
                 return
             
             print(f"\n🔄 New transcripts detected! Processing...")
+            print(f"📊 File size changed: {self.last_processed_size} → {current_size}")
             
             # Load existing categorized data
             existing_items, counts, airline_counts = load_existing_categorized_data(self.paths["output"])
@@ -266,11 +446,11 @@ class TranscriptionFileHandler(FileSystemEventHandler):
                     new_items.append(item)
             
             if not new_items:
-                print("No new transcripts to process.")
+                print("  No new transcripts to process")
                 self.last_processed_size = current_size
                 return
             
-            print(f"Processing {len(new_items)} new transcripts...")
+            print(f"  Found {len(new_items)} new transcripts to process")
             
             # Process new items
             categorized_new_items = []
@@ -290,13 +470,16 @@ class TranscriptionFileHandler(FileSystemEventHandler):
             append_categorized_data(categorized_new_items, self.paths["output"], 
                                   existing_items, counts, airline_counts, duplicate_count)
             
-            print(f"✅ Processed {len(categorized_new_items)} new transcripts")
+            print(f"✅ Live processing complete! Added {len(categorized_new_items)} new items")
             print(f"📝 Total categorized items: {len(existing_items) + len(categorized_new_items)}")
             
+            # Update last processed size
             self.last_processed_size = current_size
             
         except Exception as e:
-            print(f"❌ Error processing new transcripts: {e}")
+            print(f"❌ Error in live processing: {e}")
+            import traceback
+            traceback.print_exc()
 
 
 # ------------------------------ Main Logic ------------------------------ #
@@ -364,7 +547,7 @@ def process_transcripts_once(paths: dict, category_keywords: dict, airline_calls
     total_airline_counts = {}
     
     for item in total_items:
-        category = item.get("category", "Miscellaneous")
+        category = item.get("category", "General Communications")
         airline = item.get("airline", "Unknown")
         total_category_counts[category] = total_category_counts.get(category, 0) + 1
         total_airline_counts[airline] = total_airline_counts.get(airline, 0) + 1
@@ -411,10 +594,22 @@ def start_live_monitoring(paths: dict, category_keywords: dict, airline_callsign
     observer.schedule(event_handler, path=str(paths['input'].parent), recursive=False)
     
     observer.start()
+    print("✅ File monitoring started")
+    
+    # Also set up periodic checking as backup
+    last_check_time = time.time()
+    check_interval = 5  # Check every 5 seconds as backup
     
     try:
         while True:
             time.sleep(1)
+            
+            # Periodic backup check in case file monitoring misses something
+            current_time = time.time()
+            if current_time - last_check_time >= check_interval:
+                last_check_time = current_time
+                event_handler.process_new_transcripts()
+                
     except KeyboardInterrupt:
         print("\n🛑 Stopping live monitoring...")
         observer.stop()
@@ -434,7 +629,7 @@ def main(debug=False, live_mode=False):
     # Verify required files exist
     missing_files = []
     for name, path in paths.items():
-        if name in ["category_dict", "callsign", "input"]:
+        if name in ["unified_config", "input"]:
             if not path.exists():
                 missing_files.append(f"{name}: {path}")
     
@@ -443,20 +638,17 @@ def main(debug=False, live_mode=False):
         for mf in missing_files:
             print(f"   - {mf}")
         print("\n📝 Please ensure these files exist:")
-        print(f"   - {paths['category_dict']}")
-        print(f"   - {paths['callsign']}")
+        print(f"   - {paths['unified_config']}")
         print(f"   - {paths['input']}")
         sys.exit(1)
     
     print(f"📂 Input file: {paths['input']}")
     print(f"📂 Output file: {paths['output']}")
-    print(f"📚 Category dict: {paths['category_dict']}")
-    print(f"✈️  Callsign dict: {paths['callsign']}")
+    print(f"📚 Unified config: {paths['unified_config']}")
     print()
     
-    print("Loading dictionaries...")
-    category_keywords = load_dictionaries(paths['category_dict'])
-    airline_callsigns = load_callsigns(paths['callsign'])
+    print("Loading unified configuration...")
+    category_keywords, airline_callsigns = load_unified_config(paths['unified_config'])
 
     print(f"✅ Loaded {len(category_keywords)} categories and {len(airline_callsigns)} callsigns.")
     

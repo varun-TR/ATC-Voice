@@ -1,8 +1,12 @@
+Device set to use cuda:0
+`return_token_timestamps` is deprecated for WhisperFeatureExtractor and will be removed in Transformers v5. Use `return_attention_mask` instead, as the number of frames can be inferred from it.
+You seem to be using the pipelines sequentially on GPU. In order to maximize efficiency please use a dataset
 
 ================================================================================
   🎙️  ATC LIVE RECORDING & TRANSCRIPTION SYSTEM
 ================================================================================
   Stream: NY Center Sector 9, Westminster High
+  Model: ATC-specialized Whisper (jlvdoorn/whisper-large-v3-atco2-asr)
   Mode: 30s chunks with 5s overlap
   Duration: Continuous (Ctrl+C to stop)
   Dashboard: Enabled
@@ -14,6 +18,7 @@
 2. Run the system: python src/utils/all_in_one.py
 3. Access dashboard: http://localhost:8501
 4. Stop system: Press Ctrl+C
+5. ATC Model: jlvdoorn/whisper-large-v3-atco2-asr
 ==================================================
 ================================================================================
 🎙️  UNIFIED ATC RECORDING & TRANSCRIPTION SYSTEM
@@ -33,34 +38,27 @@
 📁 Local directory: /home/atc_voice/ATC-Voice/src/data/raw
 ✅ AUDIO EXTRACTION SYSTEM - READY
 
-2️⃣  Initializing AI Modeling System...
+2️⃣  Initializing ATC-Specialized AI Modeling System...
 ======================================================================
 🎙️  SYNCHRONIZED ATC RECORDING & TRANSCRIPTION SYSTEM
 ======================================================================
 📁 Raw audio directory: /home/atc_voice/ATC-Voice/src/data/raw
 📝 Transcription output: src/data/logs/transcripts/transcription_results.json
 
-🤖 Loading Whisper model (large-v3)...
-✅ Whisper model loaded!
-📂 Loaded 2870 existing transcriptions
-📋 Found 4 unprocessed files. Transcribing...
-🎯 Transcribing: atc_sliding_934_221652-221722_20251017_021722.wav
-🎯 Transcribed chunk 2871
-🎯 Transcribing: atc_sliding_935_221717-221747_20251017_021747.wav
-🎯 Transcribed chunk 2872
-🎯 Transcribing: atc_sliding_936_221742-221812_20251017_021812.wav
-🔄 Postprocessing completed
-🎯 Transcribed chunk 2873
-🎯 Transcribing: atc_sliding_937_221807-221837_20251017_021837.wav
-🔄 Postprocessing completed
-🔄 Postprocessing completed
-🎯 Transcribed chunk 2874
-✅ AI MODELING SYSTEM - READY
+🤖 Loading ATC-specialized Whisper model (jlvdoorn/whisper-large-v3-atco2-asr)...
+🖥️  Using device: GPU
+✅ ATC-specialized Whisper model loaded!
+📂 Loaded ATC model transcripts: 2949 items
+✅ Loaded 2949 ATC-transcribed files
+✅ All existing files already processed
+✅ ATC-SPECIALIZED AI MODELING SYSTEM - READY
 
 3️⃣  Initializing Transcription System...
 ✅ TRANSCRIPTION SYSTEM - READY
 
 4️⃣  Initializing Postprocessing System...
+🔄 Starting live postprocessor...
+✅ Live postprocessor started
 ✅ POSTPROCESSING SYSTEM - READY
 
 5️⃣  Initializing UI Render System...
@@ -96,110 +94,113 @@
 🌐 Connecting to stream: http://d.liveatc.net/zbw_ron4
 🎵 Recording with sliding windows... Press Ctrl+C to stop
 ✅ Connected! Buffering audio for sliding windows...
-📁 Chunk 1: 28.7s
+📁 Chunk 1: 30.7s
+🎯 Transcribing: atc_sliding_001_184125-184155_20251027_224155.wav
+🎯 Transcribed chunk 2950
 🔄 Postprocessing completed
-🎯 Transcribing: atc_sliding_001_201538-201608_20251018_001608.wav
-🎯 Transcribed chunk 2875
+📁 Chunk 2: 28.7s
+🎯 Transcribing: atc_sliding_002_184150-184220_20251027_224220.wav
+🎯 Transcribed chunk 2951
 🔄 Postprocessing completed
-📁 Chunk 2: 30.7s
-🎯 Transcribing: atc_sliding_002_201603-201633_20251018_001633.wav
-📁 Chunk 3: 28.7s
-📁 Chunk 4: 28.7s
+📁 Chunk 3: 30.7s
+🎯 Transcribing: atc_sliding_003_184215-184245_20251027_224245.wav
+🎯 Transcribed chunk 2952
+🔄 Postprocessing completed
+📁 Chunk 4: 30.7s
+🎯 Transcribing: atc_sliding_004_184240-184310_20251027_224310.wav
+🎯 Transcribed chunk 2953
+🔄 Postprocessing completed
 📁 Chunk 5: 28.7s
+🎯 Transcribing: atc_sliding_005_184306-184336_20251027_224336.wav
+🎯 Transcribed chunk 2954
+🔄 Postprocessing completed
 📁 Chunk 6: 30.7s
-📁 Chunk 7: 30.7s
-🎯 Transcribed chunk 2876
-🎯 Transcribing: atc_sliding_003_201628-201658_20251018_001658.wav
+🎯 Transcribing: atc_sliding_006_184331-184401_20251027_224401.wav
+🎯 Transcribed chunk 2955
+🔄 Postprocessing completed
+📁 Chunk 7: 28.7s
+🎯 Transcribing: atc_sliding_007_184356-184426_20251027_224426.wav
+🎯 Transcribed chunk 2956
+🔄 Postprocessing completed
 📁 Chunk 8: 30.7s
-🎯 Transcribed chunk 2877
-🎯 Transcribing: atc_sliding_004_201654-201724_20251018_001724.wav
-🎯 Transcribed chunk 2878
-🎯 Transcribing: atc_sliding_005_201719-201749_20251018_001749.wav
-🎯 Transcribed chunk 2879
+🎯 Transcribing: atc_sliding_008_184422-184452_20251027_224452.wav
+🎯 Transcribed chunk 2957
 🔄 Postprocessing completed
 📁 Chunk 9: 30.7s
-🎯 Transcribing: atc_sliding_006_201744-201814_20251018_001814.wav
-🔄 Postprocessing completed
-🎯 Transcribed chunk 2880
-🎯 Transcribing: atc_sliding_007_201810-201840_20251018_001840.wav
+🎯 Transcribing: atc_sliding_009_184447-184517_20251027_224517.wav
+🎯 Transcribed chunk 2958
 🔄 Postprocessing completed
 📁 Chunk 10: 28.7s
-🔄 Postprocessing completed
-🎯 Transcribed chunk 2881
-🎯 Transcribing: atc_sliding_008_201835-201905_20251018_001905.wav
-🎯 Transcribed chunk 2882
-🎯 Transcribing: atc_sliding_009_201900-201930_20251018_001930.wav
+🎯 Transcribing: atc_sliding_010_184512-184542_20251027_224542.wav
+🎯 Transcribed chunk 2959
 🔄 Postprocessing completed
 📁 Chunk 11: 30.7s
+🎯 Transcribing: atc_sliding_011_184538-184608_20251027_224608.wav
+🎯 Transcribed chunk 2960
 🔄 Postprocessing completed
 📁 Chunk 12: 30.7s
-🎯 Transcribed chunk 2883
+🎯 Transcribing: atc_sliding_012_184603-184633_20251027_224633.wav
+🎯 Transcribed chunk 2961
 🔄 Postprocessing completed
-🎯 Transcribing: atc_sliding_010_201925-201955_20251018_001955.wav
+📁 Chunk 13: 28.7s
+🎯 Transcribing: atc_sliding_013_184628-184658_20251027_224658.wav
+🎯 Transcribed chunk 2962
 🔄 Postprocessing completed
-🎯 Transcribed chunk 2884
-🎯 Transcribing: atc_sliding_011_201951-202021_20251018_002021.wav
-📁 Chunk 13: 30.7s
-🎯 Transcribed chunk 2885
-🎯 Transcribing: atc_sliding_012_202016-202046_20251018_002046.wav
-📁 Chunk 14: 28.7s
+📁 Chunk 14: 30.7s
+🎯 Transcribing: atc_sliding_014_184654-184724_20251027_224724.wav
+🎯 Transcribed chunk 2963
 🔄 Postprocessing completed
-🔄 Postprocessing completed
-🎯 Transcribed chunk 2886
-🎯 Transcribing: atc_sliding_013_202041-202111_20251018_002111.wav
 📁 Chunk 15: 28.7s
-🎯 Transcribed chunk 2887
+🎯 Transcribing: atc_sliding_015_184719-184749_20251027_224749.wav
+🎯 Transcribed chunk 2964
 🔄 Postprocessing completed
-🎯 Transcribing: atc_sliding_014_202107-202137_20251018_002137.wav
-🎯 Transcribed chunk 2888
-🎯 Transcribing: atc_sliding_015_202132-202202_20251018_002202.wav
-🎯 Transcribed chunk 2889
+📁 Chunk 16: 28.7s
+🎯 Transcribing: atc_sliding_016_184744-184814_20251027_224814.wav
+🎯 Transcribed chunk 2965
 🔄 Postprocessing completed
-📁 Chunk 16: 30.7s
-🎯 Transcribing: atc_sliding_016_202157-202227_20251018_002227.wav
+📁 Chunk 17: 30.7s
+🎯 Transcribing: atc_sliding_017_184809-184839_20251027_224839.wav
+🎯 Transcribed chunk 2966
 🔄 Postprocessing completed
-🎯 Transcribed chunk 2890
+📁 Chunk 18: 28.7s
+🎯 Transcribing: atc_sliding_018_184835-184905_20251027_224905.wav
+🎯 Transcribed chunk 2967
 🔄 Postprocessing completed
-📁 Chunk 17: 28.7s
+📁 Chunk 19: 28.7s
+🎯 Transcribing: atc_sliding_019_184900-184930_20251027_224930.wav
+🎯 Transcribed chunk 2968
 🔄 Postprocessing completed
-🎯 Transcribing: atc_sliding_017_202223-202253_20251018_002253.wav
-🎯 Transcribed chunk 2891
+📁 Chunk 20: 30.7s
+🎯 Transcribing: atc_sliding_020_184925-184955_20251027_224955.wav
+🎯 Transcribed chunk 2969
 🔄 Postprocessing completed
-📁 Chunk 18: 30.7s
-🎯 Transcribing: atc_sliding_018_202248-202318_20251018_002318.wav
-🎯 Transcribed chunk 2892
-📁 Chunk 19: 30.7s
-🎯 Transcribing: atc_sliding_019_202313-202343_20251018_002343.wav
-🎯 Transcribed chunk 2893
-🔄 Postprocessing completed
-📁 Chunk 20: 28.7s
-🎯 Transcribing: atc_sliding_020_202338-202408_20251018_002408.wav
-🔄 Postprocessing completed
-🎯 Transcribed chunk 2894
-🔄 Postprocessing completed
-📁 Chunk 21: 30.7s
-🎯 Transcribing: atc_sliding_021_202404-202434_20251018_002434.wav
-🎯 Transcribed chunk 2895
+📁 Chunk 21: 28.7s
+🎯 Transcribing: atc_sliding_021_184951-185021_20251027_225021.wav
+🎯 Transcribed chunk 2970
 🔄 Postprocessing completed
 📁 Chunk 22: 30.7s
-🎯 Transcribing: atc_sliding_022_202429-202459_20251018_002459.wav
-🎯 Transcribed chunk 2896
+🎯 Transcribing: atc_sliding_022_185016-185046_20251027_225046.wav
+🎯 Transcribed chunk 2971
 🔄 Postprocessing completed
-📁 Chunk 23: 28.7s
-🎯 Transcribing: atc_sliding_023_202454-202524_20251018_002524.wav
-🎯 Transcribed chunk 2897
+📁 Chunk 23: 30.7s
+🎯 Transcribing: atc_sliding_023_185041-185111_20251027_225111.wav
+🎯 Transcribed chunk 2972
 🔄 Postprocessing completed
-📁 Chunk 24: 30.7s
-🎯 Transcribing: atc_sliding_024_202520-202550_20251018_002550.wav
-🎯 Transcribed chunk 2898
+📁 Chunk 24: 28.7s
+🎯 Transcribing: atc_sliding_024_185107-185137_20251027_225137.wav
+🎯 Transcribed chunk 2973
 🔄 Postprocessing completed
-📁 Chunk 25: 28.7s
-🎯 Transcribing: atc_sliding_025_202545-202615_20251018_002615.wav
-🎯 Transcribed chunk 2899
+📁 Chunk 25: 30.7s
+🎯 Transcribing: atc_sliding_025_185132-185202_20251027_225202.wav
+🎯 Transcribed chunk 2974
+🔄 Postprocessing completed
 📁 Chunk 26: 30.7s
-🎯 Transcribing: atc_sliding_026_202610-202640_20251018_002640.wav
-🎯 Transcribed chunk 2900
+🎯 Transcribing: atc_sliding_026_185157-185227_20251027_225227.wav
+🎯 Transcribed chunk 2975
 🔄 Postprocessing completed
+📁 Chunk 27: 28.7s
+🎯 Transcribing: atc_sliding_027_185223-185253_20251027_225253.wav
+🎯 Transcribed chunk 2976
 🔄 Postprocessing completed
-📁 Chunk 27: 30.7s
-🎯 Transcribing: atc_sliding_027_202636-202706_20251018_002706.wav
+📁 Chunk 28: 30.7s
+🎯 Transcribing: atc_sliding_028_185248-185318_20251027_225318.wav

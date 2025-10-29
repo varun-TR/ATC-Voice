@@ -1,0 +1,8 @@
+[2025-10-18 19:48:06] 🚀 Starting Live Postprocessor
+[2025-10-18 19:48:06] 📁 Monitoring: src/data/logs/transcripts/transcripts.json
+[2025-10-18 19:48:06] 📊 Output: src/data/logs/transcripts/categorized_transcription_results.json
+[2025-10-18 19:48:06] 📝 Log: logs/live_postprocessor.log
+[2025-10-18 19:48:06] Press Ctrl+C to stop
+[2025-10-18 19:48:06] ------------------------------------------------------------
+[2025-10-18 19:48:08] 🔄 Periodic check found 6 new chunks: [2815, 2816, 2817, 2818, 2819, 2820]
+[2025-10-18 19:48:08] 🔄 Running postprocessing...

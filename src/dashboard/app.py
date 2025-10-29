@@ -26,7 +26,7 @@ BASE_DIR = Path(".")
 TRANSCRIPTIONS_FILE = BASE_DIR / "src" / "data" / "logs" / "transcripts" / "categorized_transcription_results.json"
 COMMUNICATIONS_FILE = BASE_DIR / "src" / "data" / "logs" / "atc_communications.txt"
 
-@st.cache_data(ttl=10)  # Reduced cache for 10 seconds for better responsiveness
+@st.cache_data(ttl=5)  # Reduced cache to 5 seconds for better live updates
 def load_transcription_data() -> Optional[pd.DataFrame]:
     """Load and parse transcription data from JSON file."""
     try:
@@ -56,7 +56,7 @@ def load_transcription_data() -> Optional[pd.DataFrame]:
         st.error(f"Error loading transcription data: {e}")
         return None
 
-@st.cache_data(ttl=10)  # Reduced cache for 10 seconds for better responsiveness
+@st.cache_data(ttl=5)  # Reduced cache to 5 seconds for better live updates
 def load_communication_logs() -> Optional[pd.DataFrame]:
     """Load and parse communication detection logs."""
     try:
@@ -232,7 +232,7 @@ def extract_flight_number(text: str) -> str:
     
     return "Unknown"
 
-@st.cache_data(ttl=10)  # Reduced cache for 10 seconds for better responsiveness
+@st.cache_data(ttl=5)  # Reduced cache to 5 seconds for live updates
 def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: Optional[pd.DataFrame]) -> Dict[str, Any]:
     """Calculate statistics from both data sources."""
     stats = {
@@ -243,8 +243,13 @@ def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: 
         'daily_communications': {},
         'daily_category_counts': {},  # New: daily counts by category
         'hourly_pattern': {},
-        'flight_stats': {},
+        'flight_stats': {
+            'total_flights': 0,
+            'avg_comms_per_flight': 0,
+            'max_comms_per_flight': 0
+        },
         'duration_stats': {},
+        'airline_stats': {},  # New: airline counts
         'last_update': datetime.now()
     }
     
@@ -262,6 +267,10 @@ def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: 
             if category not in stats['daily_category_counts']:
                 stats['daily_category_counts'][category] = {}
             stats['daily_category_counts'][category][str(date)] = count
+        
+        # Airline statistics
+        if 'airline' in transcription_df.columns:
+            stats['airline_stats'] = transcription_df['airline'].value_counts().to_dict()
         
         # Flight statistics
         flight_counts = transcription_df['flight_number'].value_counts()
@@ -305,7 +314,7 @@ def main():
     st.markdown("---")
     
     # Auto-refresh for live data
-    auto_refresh = st.sidebar.checkbox("🔄 Auto-refresh Communications", value=True, help="Automatically refresh communication data every 30 seconds")
+    auto_refresh = st.sidebar.checkbox("🔄 Auto-refresh Communications", value=True, help="Automatically refresh communication data every 10 seconds")
     
     # Initialize session state for refresh timing
     if 'last_refresh' not in st.session_state:
@@ -317,11 +326,11 @@ def main():
         time_since_refresh = current_time - st.session_state.last_refresh
         
         # Show countdown
-        time_until_refresh = 30 - (time_since_refresh % 30)
+        time_until_refresh = 10 - (time_since_refresh % 10)
         st.sidebar.info(f"Next refresh in: {int(time_until_refresh)}s")
         
-        # Auto-refresh every 30 seconds using st.rerun
-        if time_since_refresh >= 30:
+        # Auto-refresh every 10 seconds using st.rerun
+        if time_since_refresh >= 10:
             st.session_state.last_refresh = current_time
             st.sidebar.success("🔄 Refreshing data...")
             st.rerun()
@@ -574,6 +583,57 @@ def main():
             st.plotly_chart(fig_daily_bar, use_container_width=True)
         else:
             st.info("No daily communication data available yet.")
+        
+        # Airline statistics section
+        if stats['airline_stats']:
+            if auto_refresh:
+                st.subheader("✈️ Flight/Airline Statistics 🟢 Live")
+            else:
+                st.subheader("✈️ Flight/Airline Statistics")
+            
+            # Display airline counts as a table
+            airline_df = pd.DataFrame(list(stats['airline_stats'].items()), 
+                                    columns=['Airline/Flight', 'Count'])
+            
+            # Filter out "Unknown" entries
+            airline_df = airline_df[airline_df['Airline/Flight'] != 'Unknown']
+            
+            if not airline_df.empty:
+                airline_df = airline_df.sort_values('Count', ascending=False)
+                
+                # Add percentage column
+                total_known = airline_df['Count'].sum()
+                airline_df['Percentage'] = (airline_df['Count'] / total_known * 100).round(1)
+                airline_df['Percentage'] = airline_df['Percentage'].astype(str) + '%'
+                
+                col1, col2 = st.columns([1, 1])
+                
+                with col1:
+                    st.dataframe(airline_df, use_container_width=True, hide_index=True, height=400)
+                
+                with col2:
+                    # Create bar chart for airlines (excluding Unknown)
+                    top_airlines = airline_df.head(15)  # Show top 15 airlines
+                    
+                    fig_airlines = px.bar(
+                        top_airlines, 
+                        x='Airline/Flight', 
+                        y='Count',
+                        title="Top Airlines/Flights by Communication Count",
+                        labels={'Airline/Flight': 'Airline/Flight', 'Count': 'Number of Communications'},
+                        color='Count',
+                        color_continuous_scale='Blues'
+                    )
+                    
+                    fig_airlines.update_layout(
+                        height=400,
+                        xaxis_tickangle=45,
+                        showlegend=False
+                    )
+                    
+                    st.plotly_chart(fig_airlines, use_container_width=True)
+            else:
+                st.info("No known airline data available yet. All entries are marked as 'Unknown'.")
         
         # Recent transcriptions table
         if transcription_df is not None and not transcription_df.empty:
