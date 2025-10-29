@@ -908,12 +908,42 @@ def main():
         
         # Recent transcriptions table
         if transcription_df is not None and not transcription_df.empty:
-            st.subheader("📋 Recent Transcriptions")
-            recent_df = transcription_df.tail(5)[['timestamp_utc', 'flight_number', 'category', 'raw_transcription']].copy()
+            if auto_refresh:
+                st.subheader("📋 Recent Transcriptions 🟢 Live")
+            else:
+                st.subheader("📋 Recent Transcriptions")
+            
+            # Sort by timestamp and get the most recent 5
+            sorted_df = transcription_df.sort_values('timestamp_utc', ascending=False)
+            
+            # Select columns to display
+            columns_to_show = ['timestamp_utc', 'airline', 'category', 'raw_transcription']
+            recent_df = sorted_df.head(5)[columns_to_show].copy()
+            
             # Clean the transcription text to remove copyright notices
             recent_df['raw_transcription'] = recent_df['raw_transcription'].apply(clean_transcription_text)
-            recent_df.columns = ['Timestamp', 'Flight', 'Category', 'Communication']
-            st.dataframe(recent_df, use_container_width=True, hide_index=True)
+            
+            # Format timestamp to be more readable
+            recent_df['timestamp_utc'] = recent_df['timestamp_utc'].dt.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Rename columns for display
+            recent_df.columns = ['Timestamp', 'Airline/Flight', 'Category', 'Communication']
+            
+            # Style the dataframe
+            st.dataframe(
+                recent_df, 
+                use_container_width=True, 
+                hide_index=True,
+                column_config={
+                    "Timestamp": st.column_config.TextColumn("Timestamp", width="medium"),
+                    "Airline/Flight": st.column_config.TextColumn("Airline/Flight", width="medium"),
+                    "Category": st.column_config.TextColumn("Category", width="medium"),
+                    "Communication": st.column_config.TextColumn("Communication", width="large"),
+                }
+            )
+            
+            # Show total count
+            st.caption(f"Showing latest 5 of {len(transcription_df):,} total transcriptions")
     
     with tab2:
         st.header("Daily Analytics")
