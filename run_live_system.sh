@@ -8,7 +8,7 @@ echo "🛫 Starting ATC Voice Complete Live System..."
 echo "============================================="
 
 # Check if we're in the right directory
-if [ ! -f "src/nlp_analysis/postprocess.py" ]; then
+if [ ! -f "src/nlp_analysis/atlas.py" ]; then
     echo "❌ Error: Please run this script from the ATC-Voice root directory"
     exit 1
 fi
@@ -53,7 +53,7 @@ echo ""
 echo "🔍 Checking required files..."
 REQUIRED_FILES=(
     "src/utils/all_in_one.py"
-    "src/nlp_analysis/postprocess.py"
+    "src/nlp_analysis/atlas.py"
     "src/dashboard/app.py"
     "config/category_dict.json"
     "config/airline_callsign.json"
@@ -80,14 +80,15 @@ cleanup_existing_processes() {
     # Kill any existing all_in_one.py processes
     pkill -f "python.*all_in_one.py" 2>/dev/null || true
     
-    # Kill any existing postprocess.py processes
-    pkill -f "python.*postprocess.py" 2>/dev/null || true
+    # Kill any existing atlas.py processes
+    pkill -f "python.*atlas.py" 2>/dev/null || true
+    
+    # Kill any existing auto_cleaner.py processes
+    pkill -f "python.*auto_cleaner.py" 2>/dev/null || true
     
     # Kill any existing live_postprocessor.py processes
     pkill -f "python.*live_postprocessor.py" 2>/dev/null || true
     
-    # Kill any existing fast_live_postprocessor.py processes
-    pkill -f "python.*fast_live_postprocessor.py" 2>/dev/null || true
     
     # Kill any existing streamlit processes
     pkill -f "streamlit.*app.py" 2>/dev/null || true
@@ -103,6 +104,7 @@ cleanup_existing_processes() {
 # Initialize PIDs
 AUDIO_PID=""
 PROCESSING_PID=""
+CLEANER_PID=""
 DASHBOARD_PID=""
 
 # Clean up any existing processes
@@ -124,15 +126,24 @@ if [ ! -z "$AUDIO_PID" ]; then
     sleep 5
 fi
 
-# Start automatic processing service in background
+# Start automatic processing service in background (using atlas.py in live mode)
 echo "🔄 Starting automatic processing service..."
-nohup python3 fast_live_postprocessor.py > logs/auto_processing.log 2>&1 &
+nohup python3 src/nlp_analysis/atlas.py --live > logs/auto_processing.log 2>&1 &
 PROCESSING_PID=$!
 echo "✅ Automatic processing started (PID: $PROCESSING_PID)"
 
 # Wait a moment for processing to initialize
 echo "⏳ Waiting for processing service to initialize..."
 sleep 3
+
+# Start auto-cleaner service in background
+echo "🧹 Starting auto-cleaner service..."
+nohup python3 src/nlp_analysis/auto_cleaner.py > logs/auto_cleaner.log 2>&1 &
+CLEANER_PID=$!
+echo "✅ Auto-cleaner started (PID: $CLEANER_PID)"
+
+# Wait a moment for cleaner to initialize
+sleep 2
 
 # Check if port 8501 is in use and kill any existing processes
 echo "🔍 Checking port 8501..."
@@ -142,12 +153,22 @@ if lsof -i :8501 >/dev/null 2>&1; then
     sleep 2
 fi
 
-# Start dashboard in background
+# Get the server's IP address
+SERVER_IP=$(hostname -I | awk '{print $1}')
+
+# Start dashboard in background with external access enabled
 echo "🌐 Starting live dashboard..."
-nohup streamlit run src/dashboard/app.py --server.headless true --server.port 8501 > logs/dashboard.log 2>&1 &
+nohup streamlit run src/dashboard/app.py \
+    --server.headless true \
+    --server.port 8501 \
+    --server.address 0.0.0.0 \
+    --server.enableCORS false \
+    --server.enableXsrfProtection false > logs/dashboard.log 2>&1 &
 DASHBOARD_PID=$!
 echo "✅ Dashboard started (PID: $DASHBOARD_PID)"
-echo "Dashboard will be available at: http://localhost:8501"
+echo "📱 Dashboard accessible at:"
+echo "   - Local: http://localhost:8501"
+echo "   - Network: http://${SERVER_IP}:8501"
 echo ""
 
 # Wait a moment for dashboard to initialize and verify it's running
@@ -161,10 +182,17 @@ if ! kill -0 $DASHBOARD_PID 2>/dev/null; then
     tail -10 logs/dashboard.log
     echo ""
     echo "Trying to start dashboard on alternative port..."
-    nohup streamlit run src/dashboard/app.py --server.headless true --server.port 8502 > logs/dashboard.log 2>&1 &
+    nohup streamlit run src/dashboard/app.py \
+        --server.headless true \
+        --server.port 8502 \
+        --server.address 0.0.0.0 \
+        --server.enableCORS false \
+        --server.enableXsrfProtection false > logs/dashboard.log 2>&1 &
     DASHBOARD_PID=$!
     echo "✅ Dashboard started on port 8502 (PID: $DASHBOARD_PID)"
-    echo "Dashboard will be available at: http://localhost:8502"
+    echo "📱 Dashboard accessible at:"
+    echo "   - Local: http://localhost:8502"
+    echo "   - Network: http://${SERVER_IP}:8502"
 fi
 
 # Display system status
@@ -175,6 +203,9 @@ if [ ! -z "$AUDIO_PID" ]; then
     echo "📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)"
 fi
 echo "🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: $PROCESSING_PID)"
+if [ ! -z "$CLEANER_PID" ]; then
+    echo "🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: $CLEANER_PID)"
+fi
 if [ ! -z "$DASHBOARD_PID" ]; then
     if kill -0 $DASHBOARD_PID 2>/dev/null; then
         # Check which port the dashboard is actually using
@@ -182,7 +213,9 @@ if [ ! -z "$DASHBOARD_PID" ]; then
         if [ -z "$DASHBOARD_PORT" ]; then
             DASHBOARD_PORT="8501"
         fi
-        echo "🌐 Live Dashboard: Real-time monitoring at http://localhost:$DASHBOARD_PORT (PID: $DASHBOARD_PID)"
+        echo "🌐 Live Dashboard: Real-time monitoring (PID: $DASHBOARD_PID)"
+        echo "   - Local: http://localhost:$DASHBOARD_PORT"
+        echo "   - Network: http://${SERVER_IP}:$DASHBOARD_PORT"
     else
         echo "❌ Live Dashboard: Failed to start"
     fi
@@ -194,6 +227,7 @@ echo ""
 echo "📋 Log Files:"
 echo "  - Audio Recording: logs/audio_recording.log"
 echo "  - Auto Processing: logs/auto_processing.log"
+echo "  - Auto Cleaner: logs/auto_cleaner.log"
 echo "  - Dashboard: logs/dashboard.log"
 echo ""
 echo "🛑 Press Ctrl+C to stop all services"
@@ -212,6 +246,11 @@ cleanup() {
     if [ ! -z "$PROCESSING_PID" ]; then
         echo "  Stopping processing service (PID: $PROCESSING_PID)..."
         kill $PROCESSING_PID 2>/dev/null
+    fi
+    
+    if [ ! -z "$CLEANER_PID" ]; then
+        echo "  Stopping auto-cleaner (PID: $CLEANER_PID)..."
+        kill $CLEANER_PID 2>/dev/null
     fi
     
     if [ ! -z "$DASHBOARD_PID" ]; then
@@ -239,6 +278,10 @@ while true; do
     
     if [ ! -z "$PROCESSING_PID" ] && ! kill -0 $PROCESSING_PID 2>/dev/null; then
         echo "⚠️ Processing service (PID: $PROCESSING_PID) has stopped unexpectedly"
+    fi
+    
+    if [ ! -z "$CLEANER_PID" ] && ! kill -0 $CLEANER_PID 2>/dev/null; then
+        echo "⚠️ Auto-cleaner (PID: $CLEANER_PID) has stopped unexpectedly"
     fi
     
     if [ ! -z "$DASHBOARD_PID" ] && ! kill -0 $DASHBOARD_PID 2>/dev/null; then

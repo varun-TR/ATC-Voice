@@ -25,6 +25,111 @@ st.set_page_config(
 BASE_DIR = Path(".")
 TRANSCRIPTIONS_FILE = BASE_DIR / "src" / "data" / "logs" / "transcripts" / "categorized_transcription_results.json"
 COMMUNICATIONS_FILE = BASE_DIR / "src" / "data" / "logs" / "atc_communications.txt"
+AIRLINE_CALLSIGN_FILE = BASE_DIR / "config" / "airline_callsign.json"
+PHONETIC_ALPHABET_FILE = BASE_DIR / "config" / "phonetic_alphabet.json"
+
+# ----------------------------- Airline Detection Logic ----------------------------- #
+@st.cache_resource
+def load_airline_configs():
+    """Load airline callsign and phonetic alphabet configs."""
+    try:
+        with open(AIRLINE_CALLSIGN_FILE, 'r', encoding='utf-8') as f:
+            airline_data = json.load(f)
+        
+        with open(PHONETIC_ALPHABET_FILE, 'r', encoding='utf-8') as f:
+            phonetic_data = json.load(f)
+        
+        # Flatten airline callsigns
+        callsigns = {}
+        for airline, aliases in airline_data.items():
+            for alias in aliases:
+                callsigns[alias.lower()] = airline
+        
+        return callsigns, phonetic_data
+    except Exception as e:
+        st.error(f"Error loading airline configs: {e}")
+        return {}, {}
+
+def words_to_digits(word: str) -> str:
+    """Convert spelled numbers to digits."""
+    mapping = {
+        "zero": "0", "one": "1", "two": "2", "three": "3", "four": "4",
+        "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9"
+    }
+    return mapping.get(word, word)
+
+def normalize_numbers(tokens: List[str]) -> List[str]:
+    """Convert spelled numbers in list of tokens to digits."""
+    return [words_to_digits(tok) for tok in tokens]
+
+def preprocess_transcript_airline(text: str) -> str:
+    """Normalize transcript for airline matching."""
+    if not text or text.strip() == "":
+        return ""
+    text = text.lower()
+    text = re.sub(r"[^a-z0-9\s\-]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+def detect_airline_callsign(text: str, callsigns: Dict[str, str], phonetic_dict: Dict[str, str]) -> str:
+    """Detect airline or general aviation callsign using enhanced logic."""
+    if not text:
+        return "Unknown"
+
+    t = preprocess_transcript_airline(text)
+
+    # ---  General Aviation Tail Number Detection ---
+    # Check for direct N-numbers (e.g., N5194, N2905X)
+    direct_match = re.search(r"\bN\d{1,5}[A-Z]{0,2}\b", text.upper())
+    if direct_match:
+        return f"General Aviation ({direct_match.group(0)})"
+
+    # Decode phonetic GA sequences like "November six seven alpha foxtrot"
+    ga_match = re.search(r"\bnovember[\s\-a-z0-9]+\b", t)
+    if ga_match:
+        phrase = ga_match.group(0)
+        tokens = re.split(r"[\s\-]+", phrase.strip())
+        tokens = normalize_numbers(tokens)
+
+        tail = "N"
+        for token in tokens[1:]:
+            if token in phonetic_dict:
+                tail += phonetic_dict[token]
+            elif token.isdigit():
+                tail += token
+            elif len(token) == 1 and token.isalpha():
+                tail += token.upper()
+
+        tail = re.sub(r"[^A-Z0-9]", "", tail)
+
+        # FAA format validation: N + 1–5 digits + 0–2 letters
+        if re.match(r"^N\d{1,5}[A-Z]{0,2}$", tail):
+            return f"General Aviation ({tail})"
+
+    # --- Airline Callsign Detection (after GA check) ---
+    for alias, airline in callsigns.items():
+        if re.search(rf"\b{re.escape(alias.lower())}\b", t):
+            # --- Handle ambiguous cases like "delta" ---
+            if alias.lower() == "delta":
+                # Skip if it's part of a GA phrase (e.g., November 23 Delta)
+                if re.search(r"\bnovember\b", t):
+                    continue
+
+                # If "delta" is used with phonetic-like patterns, treat as GA
+                if re.search(r"\bdelta (alpha|bravo|charlie|delta|echo|foxtrot|golf|hotel|india|juliet|kilo|lima|mike|november|oscar|papa|quebec|romeo|sierra|tango|uniform|victor|whiskey|xray|yankee|zulu)\b", t):
+                    continue
+
+                # If it's followed by a valid flight number (digits or spoken digits)
+                if re.search(r"\bdelta (\d+|one|two|three|four|five|six|seven|eight|nine|zero)\b", t):
+                    return airline
+
+                # Otherwise, likely not an airline call
+                continue
+
+            # For all other aliases
+            return airline
+
+    return "Unknown"
 
 @st.cache_data(ttl=5)  # Reduced cache to 5 seconds for better live updates
 def load_transcription_data() -> Optional[pd.DataFrame]:
@@ -34,7 +139,39 @@ def load_transcription_data() -> Optional[pd.DataFrame]:
             return None
         
         with open(TRANSCRIPTIONS_FILE, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+            content = f.read()
+        
+        # Handle corrupted JSON with extra data after closing brace
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError as e:
+            # Try to extract valid JSON by finding the first complete object
+            if "Extra data" in str(e):
+                # Find the position of the error and truncate
+                try:
+                    # Try to find the last valid closing brace before error position
+                    valid_json = content[:e.pos].rstrip()
+                    # Find the last complete JSON object
+                    brace_count = 0
+                    last_valid_pos = 0
+                    for i, char in enumerate(valid_json):
+                        if char == '{':
+                            brace_count += 1
+                        elif char == '}':
+                            brace_count -= 1
+                            if brace_count == 0:
+                                last_valid_pos = i + 1
+                    
+                    if last_valid_pos > 0:
+                        valid_json = content[:last_valid_pos]
+                        data = json.loads(valid_json)
+                        st.warning("⚠️ Detected corrupted JSON file. Loaded valid data up to corruption point. The system will repair it on next update.")
+                    else:
+                        raise e
+                except:
+                    raise e
+            else:
+                raise e
         
         if 'items' not in data:
             return None
@@ -49,6 +186,15 @@ def load_transcription_data() -> Optional[pd.DataFrame]:
         
         # Extract flight number from transcription text
         df['flight_number'] = df['raw_transcription'].apply(extract_flight_number)
+        
+        # Re-detect airlines using enhanced logic
+        callsigns, phonetic_dict = load_airline_configs()
+        if callsigns:  # Only if configs loaded successfully
+            df['airline_detected'] = df['raw_transcription'].apply(
+                lambda text: detect_airline_callsign(text, callsigns, phonetic_dict)
+            )
+            # Use detected airline, fall back to original if detection fails
+            df['airline'] = df['airline_detected'].fillna(df.get('airline', 'Unknown'))
         
         return df
     
@@ -214,6 +360,20 @@ def get_system_info():
         }
 
 
+def clean_transcription_text(text: str) -> str:
+    """Remove copyright notices and other artifacts from transcription text."""
+    if not text:
+        return ""
+    
+    # Remove anything after © symbol
+    if '©' in text:
+        text = text.split('©')[0]
+    
+    # Strip extra whitespace
+    text = text.strip()
+    
+    return text
+
 def extract_flight_number(text: str) -> str:
     if not text:
         return "Unknown"
@@ -231,6 +391,73 @@ def extract_flight_number(text: str) -> str:
             return match.group(0)
     
     return "Unknown"
+
+@st.cache_data(ttl=5)  # Reduced cache to 5 seconds for live updates
+def calculate_advanced_comm_stats(communication_df: Optional[pd.DataFrame]) -> Dict[str, Any]:
+    """Calculate advanced communication statistics from the notebook logic."""
+    stats = {
+        'signal_level_stats': {},
+        'duration_stats': {},
+        'time_range': {},
+        'hourly_pattern_est': {}
+    }
+    
+    if communication_df is None or communication_df.empty:
+        return stats
+    
+    # Signal Level (dBFS) Statistics
+    if 'dbfs' in communication_df.columns:
+        dbfs_series = communication_df['dbfs'].dropna()
+        if len(dbfs_series) > 0:
+            stats['signal_level_stats'] = {
+                'min': float(np.nanmin(dbfs_series)),
+                'median': float(np.nanmedian(dbfs_series)),
+                'mean': float(np.nanmean(dbfs_series)),
+                'std': float(np.nanstd(dbfs_series, ddof=1)),
+                'max': float(np.nanmax(dbfs_series))
+            }
+    
+    # Communication Duration (inter-arrival times)
+    if 'timestamp' in communication_df.columns:
+        sorted_df = communication_df.sort_values('timestamp').copy()
+        sorted_df['delta_s'] = sorted_df['timestamp'].diff().dt.total_seconds()
+        
+        duration_series = sorted_df['delta_s'].dropna()
+        if len(duration_series) > 0:
+            stats['duration_stats'] = {
+                'min': float(np.nanmin(duration_series)),
+                'median': float(np.nanmedian(duration_series)),
+                'mean': float(np.nanmean(duration_series)),
+                'std': float(np.nanstd(duration_series, ddof=1)),
+                'max': float(np.nanmax(duration_series))
+            }
+        
+        # Time Range
+        timestamps = sorted_df['timestamp'].dropna()
+        if len(timestamps) > 0:
+            first_comm = timestamps.min()
+            last_comm = timestamps.max()
+            total_duration = last_comm - first_comm
+            
+            stats['time_range'] = {
+                'first_communication': first_comm,
+                'last_communication': last_comm,
+                'total_duration': total_duration,
+                'total_days': total_duration.days,
+                'total_hours': total_duration.total_seconds() / 3600
+            }
+    
+    # Hourly Pattern in EST (using UTC-5 offset)
+    if 'timestamp' in communication_df.columns:
+        df_copy = communication_df.copy()
+        # Convert to EST by subtracting 5 hours from UTC
+        df_copy['timestamp_est'] = pd.to_datetime(df_copy['timestamp']) - pd.Timedelta(hours=5)
+        df_copy['hour_est'] = df_copy['timestamp_est'].dt.hour
+        
+        hourly_counts = df_copy.groupby('hour_est').size()
+        stats['hourly_pattern_est'] = hourly_counts.to_dict()
+    
+    return stats
 
 @st.cache_data(ttl=5)  # Reduced cache to 5 seconds for live updates
 def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: Optional[pd.DataFrame]) -> Dict[str, Any]:
@@ -369,6 +596,7 @@ def main():
     
     # Calculate statistics
     stats = calculate_stats(transcription_df, communication_df)
+    advanced_stats = calculate_advanced_comm_stats(communication_df)
     
     st.sidebar.markdown(f"**Last Update:** {stats['last_update'].strftime('%H:%M:%S')}")
     
@@ -525,23 +753,14 @@ def main():
         # Daily Communication Bar Graph
         st.subheader("📊 Daily Communication Counts")
         
-        # Create combined daily data
+        # Create daily data (only communication detections)
         daily_data = []
-        
-        if stats['daily_transcriptions']:
-            for date_str, count in stats['daily_transcriptions'].items():
-                daily_data.append({
-                    'Date': pd.to_datetime(date_str),
-                    'Count': count,
-                    'Type': 'Transcriptions'
-                })
         
         if stats['daily_communications']:
             for date_str, count in stats['daily_communications'].items():
                 daily_data.append({
                     'Date': pd.to_datetime(date_str),
-                    'Count': count,
-                    'Type': 'Communication Detections'
+                    'Count': count
                 })
         
         if daily_data:
@@ -551,14 +770,10 @@ def main():
             fig_daily_bar = px.bar(
                 daily_df, 
                 x='Date', 
-                y='Count', 
-                color='Type',
+                y='Count',
                 title="Daily Communication Counts",
                 labels={'Date': 'Date', 'Count': 'Number of Communications'},
-                color_discrete_map={
-                    'Transcriptions': '#1f77b4',
-                    'Communication Detections': '#ff7f0e'
-                }
+                color_discrete_sequence=['#ff7f0e']
             )
             
             # Format x-axis to show dates properly
@@ -570,14 +785,7 @@ def main():
             # Update layout
             fig_daily_bar.update_layout(
                 height=500,
-                showlegend=True,
-                legend=dict(
-                    orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="right",
-                    x=1
-                )
+                showlegend=False
             )
             
             st.plotly_chart(fig_daily_bar, use_container_width=True)
@@ -595,94 +803,278 @@ def main():
             airline_df = pd.DataFrame(list(stats['airline_stats'].items()), 
                                     columns=['Airline/Flight', 'Count'])
             
-            # Filter out "Unknown" entries
-            airline_df = airline_df[airline_df['Airline/Flight'] != 'Unknown']
+            # Separate commercial airlines from general aviation
+            airline_df['Type'] = airline_df['Airline/Flight'].apply(
+                lambda x: 'General Aviation' if 'General Aviation' in str(x) else 'Commercial'
+            )
             
-            if not airline_df.empty:
-                airline_df = airline_df.sort_values('Count', ascending=False)
+            # Filter out "Unknown" entries
+            known_df = airline_df[airline_df['Airline/Flight'] != 'Unknown'].copy()
+            unknown_count = airline_df[airline_df['Airline/Flight'] == 'Unknown']['Count'].sum()
+            
+            if not known_df.empty:
+                known_df = known_df.sort_values('Count', ascending=False)
                 
                 # Add percentage column
-                total_known = airline_df['Count'].sum()
-                airline_df['Percentage'] = (airline_df['Count'] / total_known * 100).round(1)
-                airline_df['Percentage'] = airline_df['Percentage'].astype(str) + '%'
+                total_known = known_df['Count'].sum()
+                known_df['Percentage'] = (known_df['Count'] / total_known * 100).round(1)
+                known_df['Percentage'] = known_df['Percentage'].astype(str) + '%'
                 
-                col1, col2 = st.columns([1, 1])
+                # Split into commercial and GA
+                commercial_df = known_df[known_df['Type'] == 'Commercial'].copy()
+                ga_df = known_df[known_df['Type'] == 'General Aviation'].copy()
                 
+                # Summary metrics
+                col1, col2, col3 = st.columns(3)
                 with col1:
-                    st.dataframe(airline_df, use_container_width=True, hide_index=True, height=400)
-                
+                    st.metric("🛫 Commercial Airlines", len(commercial_df), 
+                             delta=f"{commercial_df['Count'].sum()} comms")
                 with col2:
-                    # Create bar chart for airlines (excluding Unknown)
-                    top_airlines = airline_df.head(15)  # Show top 15 airlines
-                    
-                    fig_airlines = px.bar(
-                        top_airlines, 
-                        x='Airline/Flight', 
-                        y='Count',
-                        title="Top Airlines/Flights by Communication Count",
-                        labels={'Airline/Flight': 'Airline/Flight', 'Count': 'Number of Communications'},
-                        color='Count',
-                        color_continuous_scale='Blues'
-                    )
-                    
-                    fig_airlines.update_layout(
-                        height=400,
-                        xaxis_tickangle=45,
-                        showlegend=False
-                    )
-                    
-                    st.plotly_chart(fig_airlines, use_container_width=True)
+                    st.metric("🛩️ General Aviation", len(ga_df), 
+                             delta=f"{ga_df['Count'].sum()} comms")
+                with col3:
+                    st.metric("❓ Unknown", "—", delta=f"{unknown_count} comms" if unknown_count > 0 else "0 comms")
+                
+                # Create tabs for different views
+                airline_tab1, airline_tab2, airline_tab3 = st.tabs([
+                    "🛫 Commercial Airlines", 
+                    "🛩️ General Aviation",
+                    "📊 All Traffic"
+                ])
+                
+                with airline_tab1:
+                    if not commercial_df.empty:
+                        col1, col2 = st.columns([1, 1])
+                        with col1:
+                            display_commercial = commercial_df[['Airline/Flight', 'Count', 'Percentage']].head(20)
+                            st.dataframe(display_commercial, use_container_width=True, hide_index=True, height=400)
+                        with col2:
+                            top_commercial = commercial_df.head(15)
+                            fig_commercial = px.bar(
+                                top_commercial, 
+                                x='Airline/Flight', 
+                                y='Count',
+                                title="Top 15 Commercial Airlines",
+                                labels={'Airline/Flight': 'Airline', 'Count': 'Communications'},
+                                color='Count',
+                                color_continuous_scale='Blues'
+                            )
+                            fig_commercial.update_layout(height=400, xaxis_tickangle=45, showlegend=False)
+                            st.plotly_chart(fig_commercial, use_container_width=True)
+                    else:
+                        st.info("No commercial airline communications detected yet.")
+                
+                with airline_tab2:
+                    if not ga_df.empty:
+                        col1, col2 = st.columns([1, 1])
+                        with col1:
+                            display_ga = ga_df[['Airline/Flight', 'Count', 'Percentage']].head(20)
+                            st.dataframe(display_ga, use_container_width=True, hide_index=True, height=400)
+                        with col2:
+                            top_ga = ga_df.head(15)
+                            fig_ga = px.bar(
+                                top_ga, 
+                                x='Airline/Flight', 
+                                y='Count',
+                                title="Top 15 General Aviation Aircraft",
+                                labels={'Airline/Flight': 'Tail Number', 'Count': 'Communications'},
+                                color='Count',
+                                color_continuous_scale='Greens'
+                            )
+                            fig_ga.update_layout(height=400, xaxis_tickangle=45, showlegend=False)
+                            st.plotly_chart(fig_ga, use_container_width=True)
+                    else:
+                        st.info("No general aviation communications detected yet.")
+                
+                with airline_tab3:
+                    col1, col2 = st.columns([1, 1])
+                    with col1:
+                        display_all = known_df[['Airline/Flight', 'Count', 'Percentage', 'Type']].head(25)
+                        st.dataframe(display_all, use_container_width=True, hide_index=True, height=400)
+                    with col2:
+                        # Pie chart showing distribution
+                        type_counts = known_df.groupby('Type')['Count'].sum().reset_index()
+                        fig_pie = px.pie(
+                            type_counts,
+                            values='Count',
+                            names='Type',
+                            title='Traffic Distribution',
+                            color_discrete_map={'Commercial': '#1f77b4', 'General Aviation': '#2ca02c'}
+                        )
+                        fig_pie.update_layout(height=400)
+                        st.plotly_chart(fig_pie, use_container_width=True)
             else:
                 st.info("No known airline data available yet. All entries are marked as 'Unknown'.")
         
         # Recent transcriptions table
         if transcription_df is not None and not transcription_df.empty:
             st.subheader("📋 Recent Transcriptions")
-            recent_df = transcription_df.tail(10)[['timestamp_utc', 'flight_number', 'category', 'raw_transcription']]
+            recent_df = transcription_df.tail(5)[['timestamp_utc', 'flight_number', 'category', 'raw_transcription']].copy()
+            # Clean the transcription text to remove copyright notices
+            recent_df['raw_transcription'] = recent_df['raw_transcription'].apply(clean_transcription_text)
             recent_df.columns = ['Timestamp', 'Flight', 'Category', 'Communication']
             st.dataframe(recent_df, use_container_width=True, hide_index=True)
     
     with tab2:
         st.header("Daily Analytics")
         
-        if stats['daily_transcriptions'] or stats['daily_communications']:
-            # Statistics tables
+        # Communication Time Range
+        if communication_df is not None and not communication_df.empty and advanced_stats['time_range']:
+            st.subheader("⏰ Communication Time Range")
+            
+            time_range = advanced_stats['time_range']
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric(
+                    "First Communication",
+                    time_range['first_communication'].strftime('%Y-%m-%d'),
+                    delta=time_range['first_communication'].strftime('%H:%M:%S')
+                )
+            
+            with col2:
+                st.metric(
+                    "Last Communication",
+                    time_range['last_communication'].strftime('%Y-%m-%d'),
+                    delta=time_range['last_communication'].strftime('%H:%M:%S')
+                )
+            
+            with col3:
+                st.metric(
+                    "Total Days",
+                    f"{time_range['total_days']}",
+                    delta=f"{time_range['total_hours']:.1f} hours"
+                )
+            
+            with col4:
+                st.metric(
+                    "Duration",
+                    str(time_range['total_duration']).split('.')[0],
+                    delta="HH:MM:SS"
+                )
+            
+            st.markdown("---")
+        
+        # Signal Level and Duration Statistics
+        if communication_df is not None and not communication_df.empty:
+            st.subheader("📡 Signal & Duration Analysis")
+            
             col1, col2 = st.columns(2)
             
             with col1:
-                if stats['daily_transcriptions']:
-                    st.subheader("📝 Transcription Statistics")
-                    daily_counts = list(stats['daily_transcriptions'].values())
-                    stats_table = pd.DataFrame({
-                        'Metric': ['Total Days', 'Min per Day', 'Max per Day', 'Average per Day', 'Median per Day'],
-                        'Value': [
-                            len(daily_counts),
-                            f"{min(daily_counts):.0f}",
-                            f"{max(daily_counts):.0f}",
-                            f"{np.mean(daily_counts):.1f}",
-                            f"{np.median(daily_counts):.1f}"
+                st.markdown("**📊 Signal Level (dBFS) Statistics**")
+                
+                if advanced_stats['signal_level_stats']:
+                    signal_stats = advanced_stats['signal_level_stats']
+                    
+                    signal_table = pd.DataFrame({
+                        'Metric': ['Min', 'Median', 'Mean', 'Std Dev', 'Max'],
+                        'Value (dBFS)': [
+                            f"{signal_stats['min']:.2f}",
+                            f"{signal_stats['median']:.2f}",
+                            f"{signal_stats['mean']:.2f}",
+                            f"{signal_stats['std']:.2f}",
+                            f"{signal_stats['max']:.2f}"
                         ]
                     })
-                    st.dataframe(stats_table, use_container_width=True, hide_index=True)
+                    st.dataframe(signal_table, use_container_width=True, hide_index=True)
+                    
+                    # Quick metrics
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        st.metric("Avg Signal", f"{signal_stats['mean']:.2f} dBFS")
+                    with col_b:
+                        st.metric("Signal Range", f"{signal_stats['max'] - signal_stats['min']:.2f} dB")
+                else:
+                    st.info("No signal level data available.")
             
             with col2:
-                if stats['daily_communications']:
-                    st.subheader("🎙️ Communication Detection Statistics")
-                    comm_counts = list(stats['daily_communications'].values())
-                    comm_stats_table = pd.DataFrame({
-                        'Metric': ['Total Days', 'Min per Day', 'Max per Day', 'Average per Day', 'Median per Day'],
-                        'Value': [
-                            len(comm_counts),
-                            f"{min(comm_counts):.0f}",
-                            f"{max(comm_counts):.0f}",
-                            f"{np.mean(comm_counts):.1f}",
-                            f"{np.median(comm_counts):.1f}"
+                st.markdown("**⏱️ Communication Duration (Inter-arrival Time)**")
+                
+                if advanced_stats['duration_stats']:
+                    duration_stats = advanced_stats['duration_stats']
+                    
+                    duration_table = pd.DataFrame({
+                        'Metric': ['Min', 'Median', 'Mean', 'Std Dev', 'Max'],
+                        'Value (seconds)': [
+                            f"{duration_stats['min']:.2f}",
+                            f"{duration_stats['median']:.2f}",
+                            f"{duration_stats['mean']:.2f}",
+                            f"{duration_stats['std']:.2f}",
+                            f"{duration_stats['max']:.2f}"
                         ]
                     })
-                    st.dataframe(comm_stats_table, use_container_width=True, hide_index=True)
-        
+                    st.dataframe(duration_table, use_container_width=True, hide_index=True)
+                    
+                    # Quick metrics
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        st.metric("Avg Interval", f"{duration_stats['mean']:.1f} sec")
+                    with col_b:
+                        st.metric("Median Interval", f"{duration_stats['median']:.1f} sec")
+                else:
+                    st.info("No duration data available.")
+            
+            st.markdown("---")
+            
+            # Hourly Communication Frequency (EST Timezone)
+            st.subheader("🕐 Hourly Communication Frequency (EST Timezone)")
+            
+            if advanced_stats['hourly_pattern_est']:
+                hourly_counts = advanced_stats['hourly_pattern_est']
+                
+                # Create DataFrame for plotting
+                hourly_df = pd.DataFrame(list(hourly_counts.items()), columns=['Hour', 'Count'])
+                hourly_df = hourly_df.sort_values('Hour')
+                
+                # Create bar chart
+                fig_hourly_est = go.Figure(data=[
+                    go.Bar(
+                        x=hourly_df['Hour'],
+                        y=hourly_df['Count'],
+                        marker_color='#4a90e2',
+                        text=hourly_df['Count'],
+                        textposition='outside'
+                    )
+                ])
+                
+                fig_hourly_est.update_layout(
+                    title="Histogram of Communication Frequency per Hour (EST)",
+                    xaxis_title="Local Time (EST)",
+                    yaxis_title="Number of Communications",
+                    height=500,
+                    showlegend=False,
+                    xaxis=dict(
+                        tickmode='array',
+                        tickvals=[0, 5, 10, 15, 20],
+                        ticktext=[f"{h:02d}:00" for h in [0, 5, 10, 15, 20]]
+                    ),
+                    yaxis=dict(
+                        gridcolor='rgba(128, 128, 128, 0.3)'
+                    )
+                )
+                
+                st.plotly_chart(fig_hourly_est, use_container_width=True)
+                
+                # Additional hourly statistics
+                col_a, col_b, col_c, col_d = st.columns(4)
+                
+                counts_list = list(hourly_counts.values())
+                peak_hour = max(hourly_counts, key=hourly_counts.get)
+                min_hour = min(hourly_counts, key=hourly_counts.get)
+                
+                with col_a:
+                    st.metric("Peak Hour (EST)", f"{peak_hour:02d}:00", delta=f"{hourly_counts[peak_hour]} comms")
+                with col_b:
+                    st.metric("Quietest Hour (EST)", f"{min_hour:02d}:00", delta=f"{hourly_counts[min_hour]} comms")
+                with col_c:
+                    st.metric("Avg per Hour", f"{np.mean(counts_list):.1f}")
+                with col_d:
+                    st.metric("Total Hours Active", f"{len(hourly_counts)}")
+            else:
+                st.info("No hourly pattern data available.")
         else:
-            st.info("No daily data available yet.")
+            st.info("No communication data available yet.")
     
     with tab3:
         # Simple test - just show the data directly
