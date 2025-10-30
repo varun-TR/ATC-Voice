@@ -15,7 +15,7 @@ import subprocess
 # Configuration
 TRANSCRIPTS_FILE = Path("src/data/logs/transcripts/transcripts.json")
 CATEGORIZED_FILE = Path("src/data/logs/transcripts/categorized_transcription_results.json")
-POSTPROCESS_SCRIPT = Path("src/nlp_analysis/postprocess.py")
+POSTPROCESS_SCRIPT = Path("src/nlp_analysis/atlas.py")
 LOG_FILE = Path("logs/live_postprocessor.log")
 
 def log_message(message):

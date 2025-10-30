@@ -24,6 +24,42 @@ class TranscriptionCleaner(FileSystemEventHandler):
         self.is_cleaning = False  # Prevent recursive cleaning
         self.last_cleaned_time = 0
         self.min_clean_interval = 2  # Minimum seconds between cleanings
+    
+    def remove_repeated_patterns(self, text: str) -> str:
+        """
+        Remove repeated patterns where the same word or character appears multiple times.
+        Examples:
+        - "? ? ? ? ? ?" -> ""
+        - "? ?" -> ""
+        - "uh uh uh uh" -> ""
+        - "the the the" -> ""
+        """
+        if not text:
+            return text
+        
+        original_text = text
+        
+        # Pattern 1: If the entire text is just repeated single characters with spaces (like "? ? ?")
+        # Check if text matches pattern of single char repeated with spaces
+        if re.match(r'^(\S)\s+(?:\1\s*)*\1?$', text.strip()):
+            return ''
+        
+        # Pattern 2: Remove repeated single characters/punctuation within text (2+ times)
+        # Matches "? ?" or "? ? ?" anywhere in the text
+        text = re.sub(r'(\S)\s+\1(?:\s+\1)*', '', text)
+        
+        # Pattern 3: Remove repeated words (3 or more times)
+        # Matches patterns like "uh uh uh" or "the the the"
+        text = re.sub(r'\b(\w+)\s+\1\s+\1(?:\s+\1)*\b', '', text, flags=re.IGNORECASE)
+        
+        # Pattern 4: Remove sequences of the same character repeated multiple times (5+ times)
+        # Matches patterns like "?????" or "....."
+        text = re.sub(r'(.)\1{4,}', '', text)
+        
+        # Clean up any resulting multiple spaces
+        text = re.sub(r'\s+', ' ', text).strip()
+        
+        return text
         
     def on_modified(self, event):
         """Handle file modification events."""
@@ -80,6 +116,12 @@ class TranscriptionCleaner(FileSystemEventHandler):
                 original_text = raw_text
                 if '©' in raw_text:
                     raw_text = raw_text.split('©')[0].strip()
+                    cleaned_text_count += 1
+                
+                # Remove repeated patterns
+                text_before_pattern_removal = raw_text
+                raw_text = self.remove_repeated_patterns(raw_text)
+                if raw_text != text_before_pattern_removal:
                     cleaned_text_count += 1
                 
                 # Clean up extra whitespace
@@ -147,6 +189,7 @@ def main():
     print("🔄 Auto-cleaner features:")
     print("   - Removes entries with 'thank you', 'thanks', 'thank'")
     print("   - Removes © symbols and text after them")
+    print("   - Removes repeated patterns (e.g., '? ? ? ?', 'uh uh uh')")
     print("   - Cleans up whitespace")
     print("   - Runs continuously")
     print()
@@ -188,4 +231,5 @@ if __name__ == "__main__":
         import traceback
         traceback.print_exc()
         sys.exit(1)
+
 

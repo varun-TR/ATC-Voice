@@ -70,3 +70,6 @@ echo "🔧 Nginx status: sudo systemctl status nginx"
 echo "📋 Nginx logs: sudo tail -f /var/log/nginx/access.log"
 echo "======================================================================"
 
+
+
+

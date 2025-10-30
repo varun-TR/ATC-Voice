@@ -282,6 +282,54 @@ def _is_semantically_similar(keyword: str, phrase: str) -> bool:
     return True
 
 
+# ------------------------------ Transcription Filtering ------------------------------ #
+def is_valid_transcription(text: str) -> bool:
+    """
+    Check if a transcription is valid and should be included.
+    Returns False if the text is:
+    - Only dots/periods
+    - Only "thank you" repeated
+    - Contains excessive Chinese/Japanese characters (often transcription artifacts)
+    - Empty or whitespace only
+    """
+    if not text or not text.strip():
+        return False
+    
+    # Clean the text - remove copyright notices
+    if '©' in text:
+        text = text.split('©')[0]
+    
+    text = text.strip()
+    
+    # Empty after cleaning
+    if not text:
+        return False
+    
+    # Remove all whitespace for analysis
+    text_no_space = text.replace(' ', '').replace('\n', '').replace('\t', '')
+    
+    # Check if only dots/periods
+    if all(c in '.。' for c in text_no_space):
+        return False
+    
+    # Check if mostly dots (more than 80% dots)
+    if text_no_space.count('.') + text_no_space.count('。') > len(text_no_space) * 0.8:
+        return False
+    
+    # Check if only "thank you" repeated
+    text_lower = text.lower()
+    text_words = text_lower.replace('.', '').replace(',', '').split()
+    if text_words and all(word in ['thank', 'you', 'very', 'much'] for word in text_words):
+        return False
+    
+    # Check for excessive Chinese/Japanese characters (transcription artifacts)
+    chinese_chars = sum(1 for c in text if '\u4e00' <= c <= '\u9fff' or '\u3040' <= c <= '\u309f' or '\u30a0' <= c <= '\u30ff')
+    if chinese_chars > len(text) * 0.5:  # More than 50% Chinese/Japanese characters
+        return False
+    
+    return True
+
+
 # ------------------------------ Duplicate Detection ------------------------------ #
 def flag_duplicates(items: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], int]:
     """Flag duplicate/redundant raw transcriptions."""
@@ -389,8 +437,18 @@ def append_categorized_data(new_items: List[Dict[str, Any]], output_path: Path,
         "items": all_items
     }
     
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, indent=2, ensure_ascii=False)
+    # Use atomic write to prevent corruption (write to temp file then rename)
+    temp_path = output_path.with_suffix('.json.tmp')
+    try:
+        with open(temp_path, "w", encoding="utf-8") as f:
+            json.dump(output, f, indent=2, ensure_ascii=False)
+        # Atomic rename - this prevents partial writes from being read
+        temp_path.replace(output_path)
+    except Exception as e:
+        # Clean up temp file if write failed
+        if temp_path.exists():
+            temp_path.unlink()
+        raise e
 
 
 # ------------------------------ File Monitoring ------------------------------ #
@@ -452,16 +510,27 @@ class TranscriptionFileHandler(FileSystemEventHandler):
             
             print(f"  Found {len(new_items)} new transcripts to process")
             
-            # Process new items
+            # Filter out invalid transcriptions and process valid items
             categorized_new_items = []
+            filtered_count = 0
+            
             for item in new_items:
                 raw_text = item.get("raw_transcription", "")
+                
+                # Skip invalid transcriptions (only dots, thank you, etc.)
+                if not is_valid_transcription(raw_text):
+                    filtered_count += 1
+                    continue
+                
                 category = categorize_communication(raw_text, self.category_keywords)
                 callsign = detect_callsign(raw_text, self.airline_callsigns)
                 
                 item["category"] = category
                 item["airline"] = callsign if callsign else "Unknown"
                 categorized_new_items.append(item)
+            
+            if filtered_count > 0:
+                print(f"  ⚠️  Filtered out {filtered_count} invalid transcriptions (dots, thank you, etc.)")
             
             # Detect duplicates in new items
             categorized_new_items, duplicate_count = flag_duplicates(categorized_new_items)
@@ -510,12 +579,19 @@ def process_transcripts_once(paths: dict, category_keywords: dict, airline_calls
     print(f"Processing {len(new_items)} new transcripts...")
     
     categorized_items: List[Dict[str, Any]] = []
+    filtered_count = 0
     
     for idx, item in enumerate(new_items, 1):
         if idx % 10 == 0:
             print(f"  Processed {idx}/{len(new_items)}...", end="\r")
         
         raw_text = item.get("raw_transcription", "")
+        
+        # Skip invalid transcriptions (only dots, thank you, etc.)
+        if not is_valid_transcription(raw_text):
+            filtered_count += 1
+            continue
+        
         category = categorize_communication(raw_text, category_keywords)
         callsign = detect_callsign(raw_text, airline_callsigns)
 
@@ -531,6 +607,9 @@ def process_transcripts_once(paths: dict, category_keywords: dict, airline_calls
         categorized_items.append(item)
     
     print(f"  Processed {len(new_items)}/{len(new_items)} ✅")
+    
+    if filtered_count > 0:
+        print(f"  ⚠️  Filtered out {filtered_count} invalid transcriptions (dots, thank you, etc.)")
 
     # Detect and flag duplicates
     print("\n🔍 Detecting duplicates...")

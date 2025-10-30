@@ -1329,24 +1329,15 @@ def main():
     
     # Footer
     st.markdown("---")
-    if auto_refresh:
-        st.markdown(
-            """
-            <div style='text-align: center; color: #666;'>
-                🛫 CATSR Live Communications Dashboard | 🟢 Live Processing Active (Communications + Transcriptions)
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
-    else:
-        st.markdown(
-            """
-            <div style='text-align: center; color: #666;'>
-                🛫 CATSR Live Communications Dashboard | ⏸️ Manual Refresh Mode
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
+    current_year = datetime.now().year
+    st.markdown(
+        f"""
+        <div style='text-align: center; color: #666;'>
+            🛫 CATSR Live Communications Dashboard © {current_year} All rights reserved.
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
 
 if __name__ == "__main__":
     main()

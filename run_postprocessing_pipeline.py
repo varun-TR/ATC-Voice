@@ -21,7 +21,7 @@ def run_postprocessing():
         # Run the postprocessing script
         result = subprocess.run([
             sys.executable, 
-            "src/nlp_analysis/postprocess.py"
+            "src/nlp_analysis/atlas.py"
         ], cwd="/home/atc_voice/ATC-Voice", capture_output=True, text=True)
         
         if result.returncode == 0:
