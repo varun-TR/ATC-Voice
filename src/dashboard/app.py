@@ -131,9 +131,9 @@ def detect_airline_callsign(text: str, callsigns: Dict[str, str], phonetic_dict:
 
     return "Unknown"
 
-@st.cache_data(ttl=5)  # Reduced cache to 5 seconds for better live updates
-def load_transcription_data() -> Optional[pd.DataFrame]:
-    """Load and parse transcription data from JSON file."""
+@st.cache_data(ttl=3)  # Cache for 3 seconds - ensures fresh data with 10s auto-refresh
+def load_transcription_data(_refresh_key: int = 0) -> Optional[pd.DataFrame]:
+    """Load and parse transcription data from JSON file. _refresh_key forces cache invalidation."""
     try:
         if not TRANSCRIPTIONS_FILE.exists():
             return None
@@ -202,9 +202,9 @@ def load_transcription_data() -> Optional[pd.DataFrame]:
         st.error(f"Error loading transcription data: {e}")
         return None
 
-@st.cache_data(ttl=5)  # Reduced cache to 5 seconds for better live updates
-def load_communication_logs() -> Optional[pd.DataFrame]:
-    """Load and parse communication detection logs."""
+@st.cache_data(ttl=3)  # Cache for 3 seconds - ensures fresh data with 10s auto-refresh
+def load_communication_logs(_refresh_key: int = 0) -> Optional[pd.DataFrame]:
+    """Load and parse communication detection logs. _refresh_key forces cache invalidation."""
     try:
         if not COMMUNICATIONS_FILE.exists():
             return None
@@ -392,7 +392,7 @@ def extract_flight_number(text: str) -> str:
     
     return "Unknown"
 
-@st.cache_data(ttl=5)  # Reduced cache to 5 seconds for live updates
+@st.cache_data(ttl=3)  # Cache for 3 seconds - ensures fresh data with 10s auto-refresh
 def calculate_advanced_comm_stats(communication_df: Optional[pd.DataFrame]) -> Dict[str, Any]:
     """Calculate advanced communication statistics from the notebook logic."""
     stats = {
@@ -459,7 +459,7 @@ def calculate_advanced_comm_stats(communication_df: Optional[pd.DataFrame]) -> D
     
     return stats
 
-@st.cache_data(ttl=5)  # Reduced cache to 5 seconds for live updates
+@st.cache_data(ttl=3)  # Cache for 3 seconds - ensures fresh data with 10s auto-refresh
 def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: Optional[pd.DataFrame]) -> Dict[str, Any]:
     """Calculate statistics from both data sources."""
     stats = {
@@ -477,6 +477,7 @@ def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: 
         },
         'duration_stats': {},
         'airline_stats': {},  # New: airline counts
+        'flight_number_stats': {},  # Flight number communication counts
         'last_update': datetime.now()
     }
     
@@ -502,10 +503,13 @@ def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: 
         # Flight statistics
         flight_counts = transcription_df['flight_number'].value_counts()
         stats['flight_stats'] = {
-            'total_flights': flight_counts.nunique(),
+            'total_flights': len(flight_counts),
             'avg_comms_per_flight': flight_counts.mean() if len(flight_counts) > 0 else 0,
             'max_comms_per_flight': flight_counts.max() if len(flight_counts) > 0 else 0
         }
+        
+        # Flight number statistics (for Pattern Analysis tab)
+        stats['flight_number_stats'] = flight_counts.to_dict()
         
         # Duration statistics
         if 'raw_duration_s' in transcription_df.columns:
@@ -540,27 +544,17 @@ def main():
     st.title("🛫 CATSR Live Communications Dashboard")
     st.markdown("---")
     
-    # Auto-refresh for live data
-    auto_refresh = st.sidebar.checkbox("🔄 Auto-refresh Communications", value=True, help="Automatically refresh communication data every 10 seconds")
+    # Simple manual refresh approach - no auto-refresh issues!
+    st.sidebar.info("🔄 Data Refresh")
     
-    # Initialize session state for refresh timing
-    if 'last_refresh' not in st.session_state:
-        st.session_state.last_refresh = time.time()
+    # Manual refresh button
+    if st.sidebar.button("🔄 Refresh Data Now", key="refresh_button", type="primary", use_container_width=True):
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.rerun()
     
-    if auto_refresh:
-        st.sidebar.info("🟢 Live monitoring active")
-        current_time = time.time()
-        time_since_refresh = current_time - st.session_state.last_refresh
-        
-        # Show countdown
-        time_until_refresh = 10 - (time_since_refresh % 10)
-        st.sidebar.info(f"Next refresh in: {int(time_until_refresh)}s")
-        
-        # Auto-refresh every 10 seconds using st.rerun
-        if time_since_refresh >= 10:
-            st.session_state.last_refresh = current_time
-            st.sidebar.success("🔄 Refreshing data...")
-            st.rerun()
+    st.sidebar.caption("💡 Click button to update with latest data")
+    st.sidebar.caption("⌨️ Or use browser refresh (F5)")
     
     # Sidebar with data status
     st.sidebar.header("📊 Data Status")
@@ -569,36 +563,31 @@ def main():
     col1, col2 = st.sidebar.columns(2)
     with col1:
         if TRANSCRIPTIONS_FILE.exists():
-            if auto_refresh:
-                st.success(f"📝 Transcriptions: {TRANSCRIPTIONS_FILE.name}")
-                st.caption("🟢 Live processing")
-            else:
-                st.info(f"📝 Transcriptions: {TRANSCRIPTIONS_FILE.name}")
-                st.caption("⏸️ Manual refresh")
+            st.success(f"📝 Transcriptions: {TRANSCRIPTIONS_FILE.name}")
+            st.caption("✅ Data available")
         else:
             st.error("📝 No transcription data")
     
     with col2:
         if COMMUNICATIONS_FILE.exists():
-            if auto_refresh:
-                st.success(f"🎙️ Communications: {COMMUNICATIONS_FILE.name}")
-                st.caption("🟢 Live data")
-            else:
-                st.info(f"🎙️ Communications: {COMMUNICATIONS_FILE.name}")
-                st.caption("⏸️ Manual refresh")
+            st.success(f"🎙️ Communications: {COMMUNICATIONS_FILE.name}")
+            st.caption("✅ Data available")
         else:
             st.error("🎙️ No communication logs")
     
-    # Load data
+    # Load data with refresh key to force cache invalidation
+    refresh_key = st.session_state.get('refresh_counter', 0)
     with st.spinner("Loading ATC data..."):
-        transcription_df = load_transcription_data()
-        communication_df = load_communication_logs()
+        transcription_df = load_transcription_data(_refresh_key=refresh_key)
+        communication_df = load_communication_logs(_refresh_key=refresh_key)
     
     # Calculate statistics
     stats = calculate_stats(transcription_df, communication_df)
     advanced_stats = calculate_advanced_comm_stats(communication_df)
     
-    st.sidebar.markdown(f"**Last Update:** {stats['last_update'].strftime('%H:%M:%S')}")
+    # Show last update time prominently
+    last_update_str = stats['last_update'].strftime('%H:%M:%S')
+    st.sidebar.markdown(f"**Last Update:** {last_update_str}")
     
     # VM System Monitoring
     st.sidebar.markdown("---")
@@ -702,32 +691,18 @@ def main():
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            if auto_refresh:
-                st.metric(
-                    "Total Transcriptions", 
-                    f"{stats['total_transcriptions']:,}",
-                    delta=f"🟢 Live processing"
-                )
-            else:
-                st.metric(
-                    "Total Transcriptions", 
-                    f"{stats['total_transcriptions']:,}",
-                    delta=f"⏸️ Manual refresh"
-                )
+            st.metric(
+                "Total Transcriptions", 
+                f"{stats['total_transcriptions']:,}",
+                delta=f"Total recorded"
+            )
         
         with col2:
-            if auto_refresh:
-                st.metric(
-                    "Communication Detections",
-                    f"{stats['total_communications']:,}",
-                    delta=f"🟢 Live monitoring"
-                )
-            else:
-                st.metric(
-                    "Communication Detections",
-                    f"{stats['total_communications']:,}",
-                    delta=f"⏸️ Manual refresh"
-                )
+            st.metric(
+                "Communication Detections",
+                f"{stats['total_communications']:,}",
+                delta=f"Total detected"
+            )
         
         with col3:
             if stats['flight_stats']['total_flights'] > 0:
@@ -794,10 +769,7 @@ def main():
         
         # Airline statistics section
         if stats['airline_stats']:
-            if auto_refresh:
-                st.subheader("✈️ Flight/Airline Statistics 🟢 Live")
-            else:
-                st.subheader("✈️ Flight/Airline Statistics")
+            st.subheader("✈️ Flight/Airline Statistics")
             
             # Display airline counts as a table
             airline_df = pd.DataFrame(list(stats['airline_stats'].items()), 
@@ -908,10 +880,7 @@ def main():
         
         # Recent transcriptions table
         if transcription_df is not None and not transcription_df.empty:
-            if auto_refresh:
-                st.subheader("📋 Recent Transcriptions 🟢 Live")
-            else:
-                st.subheader("📋 Recent Transcriptions")
+            st.subheader("📋 Recent Transcriptions")
             
             # Sort by timestamp and get the most recent 5
             sorted_df = transcription_df.sort_values('timestamp_utc', ascending=False)
@@ -1019,7 +988,7 @@ def main():
                     st.info("No signal level data available.")
             
             with col2:
-                st.markdown("**⏱️ Communication Duration (Inter-arrival Time)**")
+                st.markdown("**⏱️ Communication Duration (Working in Progress)**")
                 
                 if advanced_stats['duration_stats']:
                     duration_stats = advanced_stats['duration_stats']
@@ -1260,31 +1229,46 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            if stats['hourly_pattern']:
-                st.subheader("🕐 Hourly Activity Pattern")
+            if stats['flight_number_stats']:
+                st.subheader("✈️ Unique Flights Detected")
                 
-                hourly_df = pd.DataFrame(list(stats['hourly_pattern'].items()), 
-                                       columns=['Hour', 'Count'])
-                hourly_df['Hour'] = hourly_df['Hour'].astype(int)
-                hourly_df = hourly_df.sort_values('Hour')
+                # Display all unique flights from flight_number_stats
+                flight_df = pd.DataFrame(list(stats['flight_number_stats'].items()), 
+                                        columns=['Flight', 'Communications'])
                 
-                fig_hourly = px.bar(hourly_df, x='Hour', y='Count',
-                                  title="Communications by Hour of Day")
-                fig_hourly.update_layout(height=400)
-                st.plotly_chart(fig_hourly, use_container_width=True)
+                # Filter out "Unknown" entries and sort by count
+                unique_flights_df = flight_df[flight_df['Flight'] != 'Unknown'].copy()
+                unique_flights_df = unique_flights_df.sort_values('Communications', ascending=False)
+                
+                # Add rank column
+                unique_flights_df.insert(0, 'Rank', range(1, len(unique_flights_df) + 1))
+                
+                # Display summary metric
+                st.metric("Total Unique Flights", len(unique_flights_df), 
+                         delta=f"{unique_flights_df['Communications'].sum()} total comms")
+                
+                # Display table with scrollable height
+                st.dataframe(
+                    unique_flights_df,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=300
+                )
         
         with col2:
-            if transcription_df is not None and 'flight_number' in transcription_df.columns:
+            if stats['airline_stats']:
                 st.subheader("✈️ Communications per Flight")
                 
-                flight_counts = transcription_df['flight_number'].value_counts().head(20)
-                flight_df = pd.DataFrame({
-                    'Flight': flight_counts.index,
-                    'Communications': flight_counts.values
-                })
+                # Use data from airline_stats (same as Overview tab Flight/Airline Statistics)
+                airline_df = pd.DataFrame(list(stats['airline_stats'].items()), 
+                                        columns=['Flight', 'Communications'])
+                
+                # Filter out "Unknown" entries and sort by count
+                flight_df = airline_df[airline_df['Flight'] != 'Unknown'].copy()
+                flight_df = flight_df.sort_values('Communications', ascending=False).head(10)
                 
                 fig_flights = px.bar(flight_df, x='Flight', y='Communications',
-                                   title="Top 20 Most Active Flights")
+                                   title="Top 10 Most Active Flights")
                 fig_flights.update_layout(height=400)
                 fig_flights.update_xaxes(tickangle=45)
                 st.plotly_chart(fig_flights, use_container_width=True)

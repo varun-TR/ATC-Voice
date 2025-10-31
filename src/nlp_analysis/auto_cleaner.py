@@ -2,9 +2,10 @@
 """
 Automatic cleaner for categorized_transcription_results.json
 This script continuously monitors and cleans the JSON file to:
-1. Remove entries with "thank you", "thanks", or "thank"
+1. Remove entries where "thank you", "thanks", or "thank" is a standalone word or repeated
 2. Remove © symbols and any text following them
-3. Keep the file clean and neat at all times
+3. Remove repeated patterns (e.g., '? ? ? ?', 'uh uh uh')
+4. Keep the file clean and neat at all times
 """
 
 import json
@@ -106,9 +107,17 @@ class TranscriptionCleaner(FileSystemEventHandler):
                     removed_count += 1
                     continue
                 
-                # Check for "thank" in any form (case insensitive)
-                raw_text_lower = raw_text.lower()
-                if 'thank you' in raw_text_lower or 'thanks' in raw_text_lower or re.search(r'\bthank\b', raw_text_lower):
+                # Check for "thank" in specific cases (case insensitive)
+                raw_text_lower = raw_text.lower().strip()
+                
+                # Case 1: Check if entire text is just "thank you", "thanks", or "thank" (standalone)
+                if raw_text_lower in ['thank you', 'thanks', 'thank', 'thank.', 'thanks.', 'thank you.']:
+                    removed_count += 1
+                    continue
+                
+                # Case 2: Check for repeated "thank" patterns
+                # Matches: "thank thank", "thank you thank you", "thanks thanks", etc.
+                if re.search(r'\b(thank(?:\s+you)?|thanks)\s+\1\b', raw_text_lower):
                     removed_count += 1
                     continue
                 
@@ -187,7 +196,8 @@ def main():
     
     print(f"📂 Monitoring: {file_path}")
     print("🔄 Auto-cleaner features:")
-    print("   - Removes entries with 'thank you', 'thanks', 'thank'")
+    print("   - Removes standalone 'thank you', 'thanks', 'thank' entries")
+    print("   - Removes repeated 'thank' patterns (e.g., 'thank thank')")
     print("   - Removes © symbols and text after them")
     print("   - Removes repeated patterns (e.g., '? ? ? ?', 'uh uh uh')")
     print("   - Cleans up whitespace")
