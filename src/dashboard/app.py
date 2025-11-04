@@ -478,6 +478,92 @@ def calculate_advanced_comm_stats(communication_df: Optional[pd.DataFrame]) -> D
     return stats
 
 @st.cache_data(ttl=3)  # Cache for 3 seconds - ensures fresh data with 10s auto-refresh
+def extract_airport_status(transcription_df: Optional[pd.DataFrame]) -> Dict[str, Any]:
+    """Extract airport/runway status information from transcriptions."""
+    status = {
+        'runway_conditions': {'count': 0, 'recent': []},
+        'lighting_status': {'count': 0, 'recent': []},
+        'airport_operations': {'count': 0, 'recent': []},
+        'closure_alerts': {'count': 0, 'recent': []},
+        'total_status_updates': 0
+    }
+
+    if transcription_df is None or transcription_df.empty:
+        return status
+
+    # Keywords for different status types
+    runway_patterns = [
+        r'runway.*wet', r'runway.*dry', r'runway.*snow', r'runway.*ice',
+        r'runway.*closed', r'runway.*open', r'friction', r'braking action',
+        r'runway.*condition', r'runway.*surface'
+    ]
+
+    lighting_patterns = [
+        r'light.*on', r'light.*off', r'lighting.*control', r'runway.*light',
+        r'taxiway.*light', r'approach.*light', r'landing.*light'
+    ]
+
+    operations_patterns = [
+        r'airport.*closed', r'airport.*open', r'ground.*stop', r'ground.*delay',
+        r'all.*stop', r'emergency', r'ground.*control', r'tower.*closed'
+    ]
+
+    closure_patterns = [
+        r'closed.*runway', r'closed.*taxiway', r'notam', r'closure',
+        r'maintenance', r'construction', r'temporarily.*closed'
+    ]
+
+    # Process each transcription
+    for idx, row in transcription_df.iterrows():
+        text = row['raw_transcription'].lower()
+        timestamp = row['timestamp_utc']
+
+        # Check runway conditions
+        if any(re.search(pattern, text) for pattern in runway_patterns):
+            status['runway_conditions']['count'] += 1
+            if len(status['runway_conditions']['recent']) < 3:
+                status['runway_conditions']['recent'].append({
+                    'time': timestamp.strftime('%H:%M'),
+                    'message': row['raw_transcription'][:60] + '...' if len(row['raw_transcription']) > 60 else row['raw_transcription']
+                })
+
+        # Check lighting status
+        if any(re.search(pattern, text) for pattern in lighting_patterns):
+            status['lighting_status']['count'] += 1
+            if len(status['lighting_status']['recent']) < 3:
+                status['lighting_status']['recent'].append({
+                    'time': timestamp.strftime('%H:%M'),
+                    'message': row['raw_transcription'][:60] + '...' if len(row['raw_transcription']) > 60 else row['raw_transcription']
+                })
+
+        # Check airport operations
+        if any(re.search(pattern, text) for pattern in operations_patterns):
+            status['airport_operations']['count'] += 1
+            if len(status['airport_operations']['recent']) < 3:
+                status['airport_operations']['recent'].append({
+                    'time': timestamp.strftime('%H:%M'),
+                    'message': row['raw_transcription'][:60] + '...' if len(row['raw_transcription']) > 60 else row['raw_transcription']
+                })
+
+        # Check closure alerts
+        if any(re.search(pattern, text) for pattern in closure_patterns):
+            status['closure_alerts']['count'] += 1
+            if len(status['closure_alerts']['recent']) < 3:
+                status['closure_alerts']['recent'].append({
+                    'time': timestamp.strftime('%H:%M'),
+                    'message': row['raw_transcription'][:60] + '...' if len(row['raw_transcription']) > 60 else row['raw_transcription']
+                })
+
+    status['total_status_updates'] = (
+        status['runway_conditions']['count'] +
+        status['lighting_status']['count'] +
+        status['airport_operations']['count'] +
+        status['closure_alerts']['count']
+    )
+
+    return status
+
+@st.cache_data(ttl=3)  # Cache for 3 seconds - ensures fresh data with 10s auto-refresh
 def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: Optional[pd.DataFrame]) -> Dict[str, Any]:
     """Calculate statistics from both data sources."""
     stats = {
@@ -496,6 +582,10 @@ def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: 
         'duration_stats': {},
         'airline_stats': {},  # New: airline counts
         'flight_number_stats': {},  # Flight number communication counts
+        'duplicate_stats': {
+            'duplicate_count': 0,
+            'duplicate_percentage': 0.0
+        },
         'last_update': datetime.now()
     }
     
@@ -538,6 +628,16 @@ def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: 
                 'min': duration_series.min(),
                 'max': duration_series.max(),
                 'std': duration_series.std()
+            }
+
+        # Duplicate statistics
+        if 'duplicate_flag' in transcription_df.columns:
+            duplicate_count = transcription_df['duplicate_flag'].sum()
+            total_count = len(transcription_df)
+            duplicate_percentage = (duplicate_count / total_count * 100) if total_count > 0 else 0.0
+            stats['duplicate_stats'] = {
+                'duplicate_count': int(duplicate_count),
+                'duplicate_percentage': duplicate_percentage
             }
     
     # Communication detection statistics
@@ -763,11 +863,26 @@ def main():
     # Calculate statistics
     stats = calculate_stats(transcription_df, communication_df)
     advanced_stats = calculate_advanced_comm_stats(communication_df)
+    airport_status = extract_airport_status(transcription_df)
     
     # Show last update time prominently
     last_update_str = stats['last_update'].strftime('%H:%M:%S')
     st.sidebar.markdown(f"**Last Update:** {last_update_str}")
-    
+
+    # ZNY Sector Chart
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("🗺️ ZNY Sector 09")
+    st.sidebar.caption("New York ARTCC High Altitude Charts")
+
+    # Load and display the ZNY chart
+    chart_path = "src/utils/ZNYHighAltitudeCharts.jpg"
+    try:
+        st.sidebar.image(chart_path, caption="Sector 09 Monitoring", use_container_width=True)
+        st.sidebar.markdown("**📍 Current Sector:** 09")
+    except Exception as e:
+        st.sidebar.error(f"Unable to load sector chart: {e}")
+        st.sidebar.info("ZNY High Altitude Sector Chart - Sector 09")
+
     # VM System Monitoring
     st.sidebar.markdown("---")
     st.sidebar.header("🖥️ VM System Status")
@@ -896,42 +1011,42 @@ def main():
         
         # Daily Communication Bar Graph
         st.subheader("📊 Daily Communication Counts")
-        
+
         # Create daily data (only communication detections)
         daily_data = []
-        
+
         if stats['daily_communications']:
             for date_str, count in stats['daily_communications'].items():
                 daily_data.append({
                     'Date': pd.to_datetime(date_str),
                     'Count': count
                 })
-        
+
         if daily_data:
             daily_df = pd.DataFrame(daily_data)
-            
+
             # Create bar graph
             fig_daily_bar = px.bar(
-                daily_df, 
-                x='Date', 
+                daily_df,
+                x='Date',
                 y='Count',
                 title="Daily Communication Counts",
                 labels={'Date': 'Date', 'Count': 'Number of Communications'},
                 color_discrete_sequence=['#ff7f0e']
             )
-            
+
             # Format x-axis to show dates properly
             fig_daily_bar.update_xaxes(
                 tickformat="%Y-%m-%d",
                 tickangle=45
             )
-            
+
             # Update layout
             fig_daily_bar.update_layout(
                 height=500,
                 showlegend=False
             )
-            
+
             st.plotly_chart(fig_daily_bar, use_container_width=True)
         else:
             st.info("No daily communication data available yet.")
@@ -1366,7 +1481,19 @@ def main():
                     ]
                 })
                 st.dataframe(duration_table, use_container_width=True, hide_index=True)
-            
+
+            # Duplicate transmissions statistics
+            if stats['duplicate_stats']['duplicate_count'] > 0:
+                st.subheader("🔄 Duplicate Transmissions")
+                duplicate_table = pd.DataFrame({
+                    'Metric': ['Repeated or Redundant Transmissions', 'Percentage of Total'],
+                    'Value': [
+                        f"{stats['duplicate_stats']['duplicate_count']:,}",
+                        f"{stats['duplicate_stats']['duplicate_percentage']:.1f}%"
+                    ]
+                })
+                st.dataframe(duplicate_table, use_container_width=True, hide_index=True)
+
             if stats['flight_stats']['total_flights'] > 0:
                 st.subheader("✈️ Flight Statistics")
                 flight_table = pd.DataFrame({
@@ -1381,7 +1508,7 @@ def main():
         
         with col2:
             st.subheader("🎙️ Audio Level Statistics")
-            
+
             if 'audio_levels' in stats:
                 audio_table = pd.DataFrame({
                     'Metric': ['Mean dBFS', 'Median dBFS', 'Min dBFS', 'Max dBFS'],
@@ -1395,11 +1522,27 @@ def main():
                 st.dataframe(audio_table, use_container_width=True, hide_index=True)
             else:
                 st.info("No audio level data available.")
+
+            # Airport/Runway Status section
+            st.subheader("🏢 Airport Operations Status")
+            st.caption("Real-time monitoring of airport conditions from ATC communications")
+
+            if airport_status['total_status_updates'] > 0:
+                # Status summary table
+                status_summary = pd.DataFrame({
+                    'Airport Status Category': ['Runway Surface Conditions', 'Runway & Taxiway Lighting', 'Airport Operations', 'Runway/Taxiway Closures', 'Total Status Messages'],
+                    'Messages Detected': [
+                        airport_status['runway_conditions']['count'],
+                        airport_status['lighting_status']['count'],
+                        airport_status['airport_operations']['count'],
+                        airport_status['closure_alerts']['count'],
+                        airport_status['total_status_updates']
+                    ]
+                })
+                st.dataframe(status_summary, use_container_width=True, hide_index=True)
+            else:
+                st.info("No airport status updates detected in recent communications.")
         
-        # Raw data preview
-        if transcription_df is not None and not transcription_df.empty:
-            st.subheader("📄 Raw Data Preview")
-            st.dataframe(transcription_df.head(10), use_container_width=True)
     
     with tab5:
         st.header("Pattern Analysis")
