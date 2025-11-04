@@ -10,8 +10,9 @@ import time
 import shutil
 import psutil
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from functools import lru_cache
+import math
 
 # Set page config
 st.set_page_config(
@@ -141,17 +142,38 @@ def load_transcription_data(_refresh_key: int = 0) -> Optional[pd.DataFrame]:
         with open(TRANSCRIPTIONS_FILE, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Handle corrupted JSON with extra data after closing brace
+        # Handle corrupted JSON with extra data or partial last object
         try:
             data = json.loads(content)
         except json.JSONDecodeError as e:
-            # Try to extract valid JSON by finding the first complete object
-            if "Extra data" in str(e):
-                # Find the position of the error and truncate
-                try:
-                    # Try to find the last valid closing brace before error position
+            msg = str(e)
+            # Attempt salvage for both 'Extra data' and 'Expecting value' by truncating items to last complete object
+            try:
+                items_key_idx = content.find('"items"')
+                arr_start = content.find('[', items_key_idx)
+                if items_key_idx != -1 and arr_start != -1:
+                    cutoff = max(0, e.pos - 1)
+                    up_to_err = content[:cutoff]
+                    last_obj_end = up_to_err.rfind('}')
+                    if last_obj_end != -1 and last_obj_end > arr_start:
+                        # Build a minimally valid JSON up to the last complete item
+                        prefix = content[:arr_start + 1]
+                        items_part = content[arr_start + 1:last_obj_end + 1]
+                        # Ensure we don't end with a trailing comma
+                        items_part = items_part.rstrip()
+                        if items_part.endswith(','):
+                            items_part = items_part[:-1]
+                        repaired = prefix + items_part + "\n  ]\n}"
+                        data = json.loads(repaired)
+                        st.warning("⚠️ Detected corrupted JSON near the end. Loaded data up to the last complete item.")
+                    else:
+                        raise e
+                else:
+                    raise e
+            except Exception:
+                # If salvage fails and the error was specifically 'Extra data', try previous path
+                if "Extra data" in msg:
                     valid_json = content[:e.pos].rstrip()
-                    # Find the last complete JSON object
                     brace_count = 0
                     last_valid_pos = 0
                     for i, char in enumerate(valid_json):
@@ -161,17 +183,14 @@ def load_transcription_data(_refresh_key: int = 0) -> Optional[pd.DataFrame]:
                             brace_count -= 1
                             if brace_count == 0:
                                 last_valid_pos = i + 1
-                    
                     if last_valid_pos > 0:
                         valid_json = content[:last_valid_pos]
                         data = json.loads(valid_json)
                         st.warning("⚠️ Detected corrupted JSON file. Loaded valid data up to corruption point. The system will repair it on next update.")
                     else:
                         raise e
-                except:
+                else:
                     raise e
-            else:
-                raise e
         
         if 'items' not in data:
             return None
@@ -187,14 +206,18 @@ def load_transcription_data(_refresh_key: int = 0) -> Optional[pd.DataFrame]:
         # Extract flight number from transcription text
         df['flight_number'] = df['raw_transcription'].apply(extract_flight_number)
         
-        # Re-detect airlines using enhanced logic
+        # Use existing airline data from JSON, only re-detect for "Unknown" entries
+        if 'airline' not in df.columns:
+            df['airline'] = 'Unknown'
+        
+        # Only re-detect airlines for entries marked as "Unknown"
         callsigns, phonetic_dict = load_airline_configs()
         if callsigns:  # Only if configs loaded successfully
-            df['airline_detected'] = df['raw_transcription'].apply(
-                lambda text: detect_airline_callsign(text, callsigns, phonetic_dict)
-            )
-            # Use detected airline, fall back to original if detection fails
-            df['airline'] = df['airline_detected'].fillna(df.get('airline', 'Unknown'))
+            unknown_mask = df['airline'] == 'Unknown'
+            if unknown_mask.any():
+                df.loc[unknown_mask, 'airline'] = df.loc[unknown_mask, 'raw_transcription'].apply(
+                    lambda text: detect_airline_callsign(text, callsigns, phonetic_dict)
+                )
         
         return df
     
@@ -447,15 +470,10 @@ def calculate_advanced_comm_stats(communication_df: Optional[pd.DataFrame]) -> D
                 'total_hours': total_duration.total_seconds() / 3600
             }
     
-    # Hourly Pattern in EST (using UTC-5 offset)
-    if 'timestamp' in communication_df.columns:
-        df_copy = communication_df.copy()
-        # Convert to EST by subtracting 5 hours from UTC
-        df_copy['timestamp_est'] = pd.to_datetime(df_copy['timestamp']) - pd.Timedelta(hours=5)
-        df_copy['hour_est'] = df_copy['timestamp_est'].dt.hour
-        
-        hourly_counts = df_copy.groupby('hour_est').size()
-        stats['hourly_pattern_est'] = hourly_counts.to_dict()
+    # Hourly Pattern (assumed local/EST from parsed timestamps)
+    if 'hour' in communication_df.columns:
+        hourly_counts = communication_df.groupby('hour').size()
+        stats['hourly_pattern_est'] = {int(k): int(v) for k, v in hourly_counts.items()}
     
     return stats
 
@@ -539,6 +557,167 @@ def calculate_stats(transcription_df: Optional[pd.DataFrame], communication_df: 
                 }
     
     return stats
+
+@st.cache_data(ttl=10)
+def _build_minute_counts(communication_df: Optional[pd.DataFrame]) -> Optional[pd.Series]:
+    """Aggregate communication detections into per-minute counts (timestamps already in local time from log)."""
+    if communication_df is None or communication_df.empty or 'timestamp' not in communication_df.columns:
+        return None
+    df = communication_df[['timestamp']].copy()
+    df['ts'] = pd.to_datetime(df['timestamp'])
+    df.set_index('ts', inplace=True)
+    # Count events per minute; fill missing minutes with 0 within observed range
+    per_min = df['timestamp'].resample('T').count()
+    if per_min.empty:
+        return None
+    # Ensure continuous index
+    full_idx = pd.date_range(start=per_min.index.min(), end=per_min.index.max(), freq='T')
+    per_min = per_min.reindex(full_idx, fill_value=0)
+    per_min.name = 'count'
+    return per_min
+
+
+def _normal_pi(mu: float, z: float, phi: float = 1.0) -> Tuple[float, float]:
+    """Normal-approx prediction interval for a (possibly overdispersed) Poisson mean mu.
+    phi>=1 inflates variance: Var = phi * mu
+    """
+    sigma = np.sqrt(max(mu * max(phi, 1.0), 1e-9))
+    low = max(0.0, mu - z * sigma)
+    high = mu + z * sigma
+    return low, high
+
+
+def _phi(x: float) -> float:
+    return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+
+
+def _poisson_tail_normal_approx(k: int, mu: float, phi: float = 1.0) -> float:
+    """Approximate P(X >= k) for X~Poisson-like(mean=mu, var=phi*mu) using normal with continuity correction."""
+    if mu <= 0:
+        return 0.0 if k > 0 else 1.0
+    sigma = np.sqrt(max(mu * max(phi, 1.0), 1e-9))
+    z = (k - 0.5 - mu) / sigma
+    return float(1.0 - _phi(z))
+
+
+@st.cache_data(ttl=10)
+def forecast_minute_counts(minute_series: pd.Series, horizon_minutes: int = 60, window_minutes: int = 180, bias_correction: bool = False) -> Optional[pd.DataFrame]:
+    """Simple overdispersed Poisson-like forecast using recent mean/variance.
+    Returns per-minute forecast with widened prediction intervals. Optionally applies short-term bias correction.
+    """
+    if minute_series is None or len(minute_series) < 5:
+        return None
+    minute_series = minute_series.sort_index()
+    end_time = minute_series.index.max()
+    start_window = end_time - pd.Timedelta(minutes=window_minutes - 1)
+    window = minute_series.loc[minute_series.index >= start_window]
+    if window.empty:
+        window = minute_series.tail(window_minutes)
+    lam = float(window.mean()) if len(window) > 0 else float(minute_series.mean())
+    lam = max(lam, 1e-6)
+    # Overdispersion factor phi = Var / Mean (clamped >=1)
+    var_hat = float(window.var(ddof=1)) if len(window) > 1 else lam
+    phi = max(var_hat / max(lam, 1e-6), 1.0)
+
+    # Optional multiplicative bias correction using recent short window
+    bias_factor = 1.0
+    if bias_correction:
+        short = window.tail(max(5, min(15, window_minutes // 6)))
+        if len(short) > 0:
+            short_mean = float(short.mean())
+            if lam > 0:
+                bias_factor = short_mean / lam
+                # clamp mild correction to avoid instability
+                bias_factor = float(np.clip(bias_factor, 0.8, 1.25))
+
+    future_idx = pd.date_range(start=end_time + pd.Timedelta(minutes=1), periods=horizon_minutes, freq='T')
+
+    rows = []
+    for ts in future_idx:
+        mu = lam * bias_factor
+        low50, high50 = _normal_pi(mu, z=0.674, phi=phi)
+        low80, high80 = _normal_pi(mu, z=1.282, phi=phi)
+        low95, high95 = _normal_pi(mu, z=1.960, phi=phi)
+        rows.append({
+            'timestamp': ts,
+            'mean': mu,
+            'pi50_low': low50, 'pi50_high': high50,
+            'pi80_low': low80, 'pi80_high': high80,
+            'pi95_low': low95, 'pi95_high': high95
+        })
+
+    fcst = pd.DataFrame(rows).set_index('timestamp')
+    fcst.attrs['lambda'] = lam
+    fcst.attrs['phi'] = phi
+    fcst.attrs['bias_factor'] = bias_factor
+    fcst.attrs['window_minutes'] = window_minutes
+    return fcst
+
+
+@st.cache_data(ttl=10)
+def backtest_minute_forecast(minute_series: pd.Series, window_minutes: int = 180, horizon: int = 1, test_minutes: int = 720) -> Optional[Dict[str, Any]]:
+    """Rolling-origin backtest for 1-step-ahead minute forecasts over the recent test window,
+    using dispersion-widened intervals and proper naive baseline for MASE (lag-1)."""
+    if minute_series is None or len(minute_series) < window_minutes + horizon + 5:
+        return None
+    s = minute_series.sort_index()
+    end_time = s.index.max()
+    start_bt = end_time - pd.Timedelta(minutes=test_minutes)
+    s_bt = s.loc[s.index >= start_bt]
+    if len(s_bt) < window_minutes + horizon + 5:
+        s_bt = s.tail(window_minutes + horizon + 25)
+
+    preds = []
+    trues = []
+    naive_preds = []
+    cover80 = []
+    cover95 = []
+
+    times = list(s_bt.index)
+    for i in range(window_minutes, len(times) - horizon):
+        t = times[i]
+        hist_start = t - pd.Timedelta(minutes=window_minutes - 1)
+        hist = s.loc[(s.index >= hist_start) & (s.index <= t)]
+        lam = float(hist.mean()) if len(hist) > 0 else float(s.mean())
+        lam = max(lam, 1e-6)
+        # dispersion from history
+        var_hat = float(hist.var(ddof=1)) if len(hist) > 1 else lam
+        phi = max(var_hat / max(lam, 1e-6), 1.0)
+        # predict next minute (mean)
+        mu = lam
+        true_val = float(s.loc[times[i + horizon]])
+        preds.append(mu)
+        trues.append(true_val)
+        # Naive baseline = last observed value at time t
+        naive_preds.append(float(s.loc[t]))
+        # Coverage indicators using widened intervals
+        low80, high80 = _normal_pi(mu, 1.282, phi)
+        low95, high95 = _normal_pi(mu, 1.960, phi)
+        cover80.append(1 if (true_val >= low80 and true_val <= high80) else 0)
+        cover95.append(1 if (true_val >= low95 and true_val <= high95) else 0)
+
+    if not preds:
+        return None
+
+    preds_arr = np.array(preds)
+    trues_arr = np.array(trues)
+    naive_arr = np.array(naive_preds)
+
+    mae = float(np.mean(np.abs(trues_arr - preds_arr)))
+    naive_mae = float(np.mean(np.abs(trues_arr - naive_arr))) if len(naive_arr) == len(trues_arr) else None
+    mase = float(mae / (naive_mae + 1e-9)) if naive_mae is not None else None
+
+    results = {
+        'mae': mae,
+        'mase_vs_naive': mase,
+        'n': int(len(preds)),
+        'pi80_coverage': float(np.mean(cover80)) if cover80 else None,
+        'pi95_coverage': float(np.mean(cover95)) if cover95 else None,
+        'preds': preds_arr.tolist(),
+        'trues': trues_arr.tolist(),
+        'naive': naive_arr.tolist()
+    }
+    return results
 
 def main():
     st.title("🛫 CATSR Live Communications Dashboard")
@@ -680,19 +859,19 @@ def main():
         "📊 Overview", 
         "📈 Daily Analytics", 
         "🏷️ Categories",
-        "📋 Detailed Stats", 
-        "🔍 Pattern Analysis"
+        "📋 Detailed Stats (Working)", 
+        "🔍 Pattern Analysis (Working)"
     ])
     
     with tab1:
         st.header("Dashboard Overview")
         
         # Key metrics
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3 = st.columns(3)
         
         with col1:
             st.metric(
-                "Total Transcriptions", 
+                "Transcriptions Processed", 
                 f"{stats['total_transcriptions']:,}",
                 delta=f"Total recorded"
             )
@@ -705,16 +884,6 @@ def main():
             )
         
         with col3:
-            if stats['flight_stats']['total_flights'] > 0:
-                st.metric(
-                    "Unique Flights",
-                    f"{stats['flight_stats']['total_flights']:,}",
-                    delta=f"{stats['flight_stats']['avg_comms_per_flight']:.1f} avg/flight"
-                )
-            else:
-                st.metric("Unique Flights", "0", delta="No data")
-        
-        with col4:
             if stats['categories']:
                 top_category = max(stats['categories'], key=stats['categories'].get)
                 st.metric(
@@ -782,7 +951,9 @@ def main():
             
             # Filter out "Unknown" entries
             known_df = airline_df[airline_df['Airline/Flight'] != 'Unknown'].copy()
-            unknown_count = airline_df[airline_df['Airline/Flight'] == 'Unknown']['Count'].sum()
+            unknown_df = airline_df[airline_df['Airline/Flight'] == 'Unknown'].copy()
+            unknown_entries_count = len(unknown_df)  # Count of unknown entries
+            unknown_comms_sum = unknown_df['Count'].sum() if not unknown_df.empty else 0  # Total communications
             
             if not known_df.empty:
                 known_df = known_df.sort_values('Count', ascending=False)
@@ -797,15 +968,13 @@ def main():
                 ga_df = known_df[known_df['Type'] == 'General Aviation'].copy()
                 
                 # Summary metrics
-                col1, col2, col3 = st.columns(3)
+                col1, col2 = st.columns(2)
                 with col1:
-                    st.metric("🛫 Commercial Airlines", len(commercial_df), 
+                    st.metric("🛫 Detected Commercial Airlines", len(commercial_df), 
                              delta=f"{commercial_df['Count'].sum()} comms")
                 with col2:
-                    st.metric("🛩️ General Aviation", len(ga_df), 
+                    st.metric("🛩️ Detected General Aviation", len(ga_df), 
                              delta=f"{ga_df['Count'].sum()} comms")
-                with col3:
-                    st.metric("❓ Unknown", "—", delta=f"{unknown_count} comms" if unknown_count > 0 else "0 comms")
                 
                 # Create tabs for different views
                 airline_tab1, airline_tab2, airline_tab3 = st.tabs([
@@ -818,7 +987,7 @@ def main():
                     if not commercial_df.empty:
                         col1, col2 = st.columns([1, 1])
                         with col1:
-                            display_commercial = commercial_df[['Airline/Flight', 'Count', 'Percentage']].head(20)
+                            display_commercial = commercial_df[['Airline/Flight', 'Count', 'Percentage']]
                             st.dataframe(display_commercial, use_container_width=True, hide_index=True, height=400)
                         with col2:
                             top_commercial = commercial_df.head(15)
@@ -840,7 +1009,7 @@ def main():
                     if not ga_df.empty:
                         col1, col2 = st.columns([1, 1])
                         with col1:
-                            display_ga = ga_df[['Airline/Flight', 'Count', 'Percentage']].head(20)
+                            display_ga = ga_df[['Airline/Flight', 'Count', 'Percentage']]
                             st.dataframe(display_ga, use_container_width=True, hide_index=True, height=400)
                         with col2:
                             top_ga = ga_df.head(15)
@@ -1061,15 +1230,24 @@ def main():
                 counts_list = list(hourly_counts.values())
                 peak_hour = max(hourly_counts, key=hourly_counts.get)
                 min_hour = min(hourly_counts, key=hourly_counts.get)
+
+                def _fmt_hour_ampm(h: int) -> str:
+                    h = int(h) % 24
+                    suffix = "AM" if h < 12 else "PM"
+                    h12 = 12 if (h % 12) == 0 else (h % 12)
+                    return f"{h12}:00 {suffix}"
                 
                 with col_a:
-                    st.metric("Peak Hour (EST)", f"{peak_hour:02d}:00", delta=f"{hourly_counts[peak_hour]} comms")
+                    st.metric("Peak Hour (EST)", _fmt_hour_ampm(peak_hour), delta=f"{hourly_counts[peak_hour]} comms")
                 with col_b:
-                    st.metric("Quietest Hour (EST)", f"{min_hour:02d}:00", delta=f"{hourly_counts[min_hour]} comms")
+                    st.metric("Quietest Hour (EST)", _fmt_hour_ampm(min_hour), delta=f"{hourly_counts[min_hour]} comms")
                 with col_c:
                     st.metric("Avg per Hour", f"{np.mean(counts_list):.1f}")
                 with col_d:
                     st.metric("Total Hours Active", f"{len(hourly_counts)}")
+
+                if int(peak_hour) < 7:
+                    st.info("Peak hour appears early in the day. If unexpected, verify the timestamp timezone of communication logs.")
             else:
                 st.info("No hourly pattern data available.")
         else:
@@ -1229,87 +1407,353 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            if stats['flight_number_stats']:
-                st.subheader("✈️ Unique Flights Detected")
-                
-                # Display all unique flights from flight_number_stats
-                flight_df = pd.DataFrame(list(stats['flight_number_stats'].items()), 
-                                        columns=['Flight', 'Communications'])
-                
-                # Filter out "Unknown" entries and sort by count
-                unique_flights_df = flight_df[flight_df['Flight'] != 'Unknown'].copy()
-                unique_flights_df = unique_flights_df.sort_values('Communications', ascending=False)
-                
-                # Add rank column
-                unique_flights_df.insert(0, 'Rank', range(1, len(unique_flights_df) + 1))
-                
-                # Display summary metric
-                st.metric("Total Unique Flights", len(unique_flights_df), 
-                         delta=f"{unique_flights_df['Communications'].sum()} total comms")
-                
-                # Display table with scrollable height
-                st.dataframe(
-                    unique_flights_df,
-                    use_container_width=True,
-                    hide_index=True,
-                    height=300
-                )
+            # Removed '✈️ Unique Flights Detected' per request
+            pass
         
         with col2:
-            if stats['airline_stats']:
-                st.subheader("✈️ Communications per Flight")
-                
-                # Use data from airline_stats (same as Overview tab Flight/Airline Statistics)
-                airline_df = pd.DataFrame(list(stats['airline_stats'].items()), 
-                                        columns=['Flight', 'Communications'])
-                
-                # Filter out "Unknown" entries and sort by count
-                flight_df = airline_df[airline_df['Flight'] != 'Unknown'].copy()
-                flight_df = flight_df.sort_values('Communications', ascending=False).head(10)
-                
-                fig_flights = px.bar(flight_df, x='Flight', y='Communications',
-                                   title="Top 10 Most Active Flights")
-                fig_flights.update_layout(height=400)
-                fig_flights.update_xaxes(tickangle=45)
-                st.plotly_chart(fig_flights, use_container_width=True)
+            # Removed 'Communications per Flight' per request
+            pass
         
-        # Communication intervals analysis
-        if transcription_df is not None and not transcription_df.empty:
-            st.subheader("⏱️ Communication Timing Analysis")
+        # Removed '⏱️ Communication Timing Analysis' per request
+        
+        # ---------------- Traffic Volume Forecasting ----------------
+        st.subheader("📈 ATC Traffic Forecast: Predicting Communication Volume")
+        st.caption("Real-time prediction of how many radio communication detections per minute to expect in the near future")
+        
+        minute_series = _build_minute_counts(communication_df)
+        if minute_series is None:
+            st.info("No communication detections available to forecast yet.")
+        else:
+            col_cfg, col_risk = st.columns([2, 1])
+            with col_cfg:
+                st.markdown("**⚙️ Forecast Settings:**")
+                horizon = st.slider(
+                    "How far ahead to predict (minutes)", 
+                    min_value=15, max_value=180, value=60, step=5,
+                    help="Choose how many minutes into the future you want to see predictions for"
+                )
+                window = st.slider(
+                    "Historical data window (minutes)", 
+                    min_value=30, max_value=720, value=180, step=30,
+                    help="How much past data to use for making predictions. Larger windows = more stable but less responsive to recent changes"
+                )
+                bias_on = st.checkbox(
+                    "Recent trend adjustment", 
+                    value=False,
+                    help="Give more weight to very recent data patterns (last 5-15 minutes)"
+                )
+            with col_risk:
+                st.markdown("**🚨 Alert Threshold:**")
+                threshold = st.number_input(
+                    "Communication detections per minute", 
+                    min_value=0, value=10, step=1,
+                    help="Set threshold to calculate risk of exceeding this communication rate"
+                )
             
-            # Sort by timestamp and calculate intervals
-            sorted_df = transcription_df.sort_values('timestamp_utc')
-            intervals = []
-            
-            for i in range(1, len(sorted_df)):
-                interval = (sorted_df.iloc[i]['timestamp_utc'] - 
-                           sorted_df.iloc[i-1]['timestamp_utc']).total_seconds()
-                intervals.append(interval)
-            
-            if intervals:
-                intervals_df = pd.DataFrame({'interval_seconds': intervals})
-                # Filter out very long intervals (likely day breaks)
-                filtered_intervals = intervals_df[intervals_df['interval_seconds'] < 3600]
+            # Forecast
+            fcst = forecast_minute_counts(minute_series, horizon_minutes=horizon, window_minutes=window, bias_correction=bias_on)
+            if fcst is None or fcst.empty:
+                st.info("Insufficient history to produce a forecast.")
+            else:
+                lam = float(fcst.attrs.get('lambda', float(minute_series.mean())))
+                phi = float(fcst.attrs.get('phi', 1.0))
+                bias_factor = float(fcst.attrs.get('bias_factor', 1.0))
+                # History (last 24h)
+                hist = minute_series.tail(24 * 60)
+                hist_df = pd.DataFrame({'timestamp': hist.index, 'count': hist.values})
                 
-                if len(filtered_intervals) > 0:
-                    interval_stats = {
-                        'Metric': ['Average Interval', 'Median Interval', 'Min Interval', 'Max Interval'],
-                        'Value (seconds)': [
-                            f"{filtered_intervals['interval_seconds'].mean():.1f}",
-                            f"{filtered_intervals['interval_seconds'].median():.1f}",
-                            f"{filtered_intervals['interval_seconds'].min():.1f}",
-                            f"{filtered_intervals['interval_seconds'].max():.1f}"
-                        ]
-                    }
+                # Build forecast dataframe for plotting
+                plot_df = pd.DataFrame({
+                    'timestamp': fcst.index,
+                    'mean': fcst['mean'],
+                    'pi80_low': fcst['pi80_low'], 'pi80_high': fcst['pi80_high'],
+                    'pi95_low': fcst['pi95_low'], 'pi95_high': fcst['pi95_high']
+                })
+                
+                # Timestamps are already in EST (local time from log file), no conversion needed
+                hist_df['timestamp_est'] = pd.to_datetime(hist_df['timestamp'])
+                plot_df['timestamp_est'] = pd.to_datetime(plot_df['timestamp'])
+                
+                # Plot history + forecast with ribbons
+                fig = go.Figure()
+                
+                # Historical actual data
+                fig.add_trace(go.Scatter(
+                    x=hist_df['timestamp_est'], 
+                    y=hist_df['count'],
+                    mode='lines', 
+                    name='📊 Actual History (Past Communications)',
+                    line=dict(color='#444', width=2),
+                    hovertemplate='<b>Historical Data</b><br>' +
+                                  'Time: %{x|%Y-%m-%d %H:%M}<br>' +
+                                  'Communications: %{y:.0f} per minute<br>' +
+                                  '<extra></extra>'
+                ))
+                
+                # 95% confidence interval (outer band)
+                fig.add_trace(go.Scatter(
+                    x=plot_df['timestamp_est'], 
+                    y=plot_df['pi95_high'],
+                    mode='lines', 
+                    line=dict(color='rgba(31,119,180,0)'), 
+                    showlegend=False,
+                    hoverinfo='skip'
+                ))
+                fig.add_trace(go.Scatter(
+                    x=plot_df['timestamp_est'], 
+                    y=plot_df['pi95_low'],
+                    fill='tonexty', 
+                    mode='lines', 
+                    name='95% Confidence (Very Likely Range)',
+                    line=dict(color='rgba(31,119,180,0.2)'), 
+                    fillcolor='rgba(31,119,180,0.2)',
+                    hovertemplate='<b>95%% Confidence Range</b><br>' +
+                                  'Time: %{x|%Y-%m-%d %H:%M}<br>' +
+                                  'Range: %{y:.1f} comms/min<br>' +
+                                  '<extra></extra>'
+                ))
+                
+                # 80% confidence interval (inner band)
+                fig.add_trace(go.Scatter(
+                    x=plot_df['timestamp_est'], 
+                    y=plot_df['pi80_high'],
+                    mode='lines', 
+                    line=dict(color='rgba(255,127,14,0)'), 
+                    showlegend=False,
+                    hoverinfo='skip'
+                ))
+                fig.add_trace(go.Scatter(
+                    x=plot_df['timestamp_est'], 
+                    y=plot_df['pi80_low'],
+                    fill='tonexty', 
+                    mode='lines', 
+                    name='80% Confidence (Expected Range)',
+                    line=dict(color='rgba(255,127,14,0.35)'), 
+                    fillcolor='rgba(255,127,14,0.35)',
+                    hovertemplate='<b>80%% Confidence Range</b><br>' +
+                                  'Time: %{x|%Y-%m-%d %H:%M}<br>' +
+                                  'Range: %{y:.1f} comms/min<br>' +
+                                  '<extra></extra>'
+                ))
+                
+                # Forecast mean (predicted line)
+                fig.add_trace(go.Scatter(
+                    x=plot_df['timestamp_est'], 
+                    y=plot_df['mean'],
+                    mode='lines', 
+                    name='🔮 Predicted Average',
+                    line=dict(color='#1f77b4', width=3),
+                    hovertemplate='<b>Forecast</b><br>' +
+                                  'Time: %{x|%Y-%m-%d %H:%M}<br>' +
+                                  'Expected: %{y:.1f} comms/min<br>' +
+                                  '<extra></extra>'
+                ))
+                
+                fig.update_layout(
+                    title="<b>ATC Communication Rate: Historical Data + Future Prediction</b>",
+                    xaxis_title="<b>Time</b>",
+                    yaxis_title="<b>Radio Communication Detections per Minute</b>",
+                    height=500,
+                    hovermode='x unified',
+                    legend=dict(
+                        orientation="v",
+                        yanchor="top",
+                        y=0.99,
+                        xanchor="left",
+                        x=0.01,
+                        bgcolor='rgba(255,255,255,0.8)'
+                    )
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Add explanation below graph
+                st.caption("""
+                📊 **How to read this graph:**
+                - **Dark line (left side)**: Actual past communication rates we observed
+                - **Blue line (right side)**: Our prediction of future communication rates
+                - **Colored bands**: Confidence ranges - wider bands mean more uncertainty
+                  - **Orange band (narrower)**: 80% confident actual rate will fall in this range
+                  - **Blue band (wider)**: 95% confident actual rate will fall in this range
+                """)
+                
+                # Display key metrics
+                st.markdown("---")
+                st.markdown("### 📊 Key Forecast Insights")
+                
+                col1, col2, col3 = st.columns(3)
+                
+                # Calculate metrics
+                near_term_mean = float(fcst['mean'].head(min(10, len(fcst))).mean())
+                risk = _poisson_tail_normal_approx(int(threshold), float(lam) * (bias_factor if bias_on else 1.0), float(phi))
+                risk_pct = risk * 100.0
+                hist_baseline = float(np.percentile(hist.values, 75)) if len(hist) > 0 else near_term_mean
+                
+                with col1:
+                    st.metric(
+                        "Expected Communication Rate",
+                        f"{int(round(near_term_mean))} per min",
+                        help="Average predicted radio communication detections per minute for the next 10 minutes"
+                    )
+
+                    # Add popup messages based on expected rate vs threshold
+                    if near_term_mean < threshold:
+                        st.success("🍹 **Grab a coke and relax!** Light traffic expected ahead.")
+                    elif near_term_mean >= threshold:
+                        st.warning("⚡ **You are entering a busy window!** Prepare for increased communication volume.")
+                
+                with col2:
+                    alert_color = "🔴" if risk_pct >= 90 else "🟡" if risk_pct >= 70 else "🟢"
+                    st.metric(
+                        f"{alert_color} Risk of Exceeding {threshold}/min", 
+                        f"{risk_pct:.0f}%",
+                        delta="High Risk" if risk_pct >= 90 else "Moderate Risk" if risk_pct >= 70 else "Low Risk",
+                        delta_color="off",
+                        help=f"Probability that communication rate will exceed {threshold} per minute"
+                    )
+                
+                with col3:
+                    if near_term_mean >= hist_baseline:
+                        traffic_status = "🔴 Busy"
+                        traffic_delta = "Higher than typical"
+                    else:
+                        traffic_status = "🟢 Normal"
+                        traffic_delta = "Within normal range"
                     
-                    interval_stats_df = pd.DataFrame(interval_stats)
-                    st.dataframe(interval_stats_df, use_container_width=True, hide_index=True)
+                    st.metric(
+                        "Traffic Status", 
+                        traffic_status,
+                        delta=traffic_delta,
+                        delta_color="off",
+                        help=f"Compared to 75th percentile baseline ({hist_baseline:.1f} comms/min)"
+                    )
+                
+                # Natural-language summary
+                if risk_pct >= 90.0:
+                    st.error(f"🚨 **High Traffic Alert**: Very high probability ({risk_pct:.0f}%) of exceeding {threshold} communication detections per minute. Expect a busy period.")
+                elif risk_pct >= 70.0:
+                    st.warning(f"⚠️ **Moderate Traffic**: {risk_pct:.0f}% chance of exceeding {threshold} communication detections per minute. Traffic may pick up.")
+                else:
+                    st.info(f"✅ **Normal Traffic**: Expecting around {int(round(near_term_mean))} communication detections per minute. {risk_pct:.0f}% chance of exceeding {threshold}/min threshold.")
+                
+                # Technical details in expander
+                with st.expander("🔧 Technical Forecast Parameters"):
+                    st.write(f"- **λ (lambda)**: {lam:.3f} - Base rate (average communication detections per minute)")
+                    st.write(f"- **φ (phi)**: {phi:.3f} - Dispersion factor (variance/mean ratio)")
+                    st.write(f"- **Bias correction factor**: {bias_factor:.3f} - Adjustment for recent trends")
+                    st.write(f"- **Historical baseline (75th percentile)**: {hist_baseline:.2f} comms/min")
+                
+                # Backtest
+                st.markdown("---")
+                st.subheader("✅ Model Validation: How Accurate Are Our Predictions?")
+                st.caption("Testing forecast accuracy using historical data (rolling backtest with 1-minute ahead predictions)")
+                bt = backtest_minute_forecast(minute_series, window_minutes=window, horizon=1, test_minutes=min(horizon*6, 1440))
+                if bt is None:
+                    st.info("Not enough history for backtesting yet.")
+                else:
+                    colm1, colm2, colm3 = st.columns(3)
+                    with colm1:
+                        st.metric(
+                            "Average Error", 
+                            f"{bt['mae']:.2f} comms/min",
+                            help="Mean Absolute Error (MAE): Average difference between predicted and actual communication detections per minute. Lower is better."
+                        )
+                    with colm2:
+                        mase_val = bt['mase_vs_naive']
+                        mase_delta = "Better than naive" if mase_val < 1 else "Worse than naive"
+                        st.metric(
+                            "Model vs Simple Guess", 
+                            f"{mase_val:.2f}",
+                            delta=mase_delta,
+                            delta_color="inverse",
+                            help="MASE (Mean Absolute Scaled Error): Compares model to a naive 'last value' prediction. < 1.0 means our model beats the simple approach."
+                        )
+                    with colm3:
+                        st.metric(
+                            "Prediction Intervals Hit Rate", 
+                            f"{bt['pi80_coverage']*100:.0f}% / {bt['pi95_coverage']*100:.0f}%",
+                            help="Shows how often actual values fell within our 80% and 95% confidence intervals. Should be close to 80% and 95% respectively."
+                        )
                     
-                    # Interval histogram
-                    fig_intervals = px.histogram(filtered_intervals, x='interval_seconds',
-                                               nbins=50, title="Distribution of Communication Intervals")
-                    fig_intervals.update_layout(height=300)
-                    st.plotly_chart(fig_intervals, use_container_width=True)
+                    # Predicted vs actual scatter with improved labeling
+                    bt_df = pd.DataFrame({
+                        'Predicted Communications': bt['preds'], 
+                        'Actual Communications': bt['trues']
+                    })
+                    
+                    fig_bt = px.scatter(
+                        bt_df, 
+                        x='Predicted Communications', 
+                        y='Actual Communications',
+                        title="<b>Model Accuracy: Predicted vs Actual Communication Detections per Minute</b>",
+                        labels={
+                            'Predicted Communications': 'Predicted Communication Detections per Minute',
+                            'Actual Communications': 'Actual Communication Detections per Minute'
+                        }
+                    )
+                    
+                    # Add perfect prediction line (diagonal)
+                    max_val = max(bt_df['Predicted Communications'].max(), bt_df['Actual Communications'].max())
+                    fig_bt.add_shape(
+                        type='line', 
+                        x0=0, y0=0, 
+                        x1=max_val, y1=max_val, 
+                        line=dict(color='red', dash='dash', width=2),
+                        name='Perfect Prediction'
+                    )
+                    
+                    # Add annotation for the diagonal line
+                    fig_bt.add_annotation(
+                        x=max_val * 0.7,
+                        y=max_val * 0.75,
+                        text="Perfect predictions<br>would fall on this line",
+                        showarrow=True,
+                        arrowhead=2,
+                        arrowsize=1,
+                        arrowwidth=2,
+                        arrowcolor='red',
+                        ax=-40,
+                        ay=-40,
+                        font=dict(size=10, color='red'),
+                        bgcolor='rgba(255,255,255,0.8)',
+                        bordercolor='red',
+                        borderwidth=1
+                    )
+                    
+                    fig_bt.update_layout(
+                        height=450,
+                        xaxis_title="<b>Predicted Communication Detections per Minute</b>",
+                        yaxis_title="<b>Actual Communication Detections per Minute</b>",
+                        showlegend=False,
+                        hovermode='closest'
+                    )
+                    
+                    fig_bt.update_traces(
+                        marker=dict(size=8, opacity=0.6, color='steelblue'),
+                        hovertemplate='<b>Prediction Quality</b><br>' +
+                                      'Predicted: %{x:.1f} comms/min<br>' +
+                                      'Actually Observed: %{y:.1f} comms/min<br>' +
+                                      '<extra></extra>'
+                    )
+                    
+                    st.plotly_chart(fig_bt, use_container_width=True)
+                    
+                    # Add interpretation guide
+                    st.caption("""
+                    📊 **How to read this graph:**
+                    - Each point represents one forecast made by the model
+                    - Points close to the red diagonal line = accurate predictions
+                    - Points above the line = model under-predicted (actual was higher)
+                    - Points below the line = model over-predicted (actual was lower)
+                    - Tighter clustering around the line = better model accuracy
+                    """)
+                
+                with st.expander("Method & Assumptions"):
+                    st.markdown(
+                        "- Forecast = recent mean per-minute rate with optional short-term bias factor; uncertainty widened using dispersion φ=Var/Mean.\n"
+                        "- Intervals: 80% and 95% normal-approx with Var=φ·μ. Exceedance uses continuity-corrected normal tail.\n"
+                        "- Backtest: rolling origin, 1-minute horizon; MAE/MASE vs lag-1 naive; empirical coverage reported.\n"
+                        "- Guidance: Exceedance > 90% indicates strong likelihood of an operational surge.")
     
     # Footer
     st.markdown("---")
