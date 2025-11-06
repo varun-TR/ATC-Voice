@@ -17,7 +17,13 @@ The system ingests live or recorded ATC audio, converts it into text using Speec
   - Transcripts
   - Communication timelines
   - Flight activity summaries
-  - Alerts/anomalies  
+  - Alerts/anomalies
+<img width="1475" height="432" alt="image" src="https://github.com/user-attachments/assets/2033c42b-2e62-47e5-81d8-a1b18a84954f" />
+<img width="1460" height="810" alt="image" src="https://github.com/user-attachments/assets/b93a4327-ce2f-403c-9ce8-44cf534f9017" />
+<img width="1686" height="852" alt="image" src="https://github.com/user-attachments/assets/c6237e0b-2373-453b-ac32-57125d4b8adc" />
+<img width="1708" height="725" alt="image" src="https://github.com/user-attachments/assets/5b0b030f-fbcb-4e30-8f65-4abf4275c06e" />
+
+
 
 ---
 
