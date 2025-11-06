@@ -4,6 +4,9 @@
 This project is part of the **GMU DAEN Capstone (Fall 2025)** and focuses on building an **Air Traffic Control (ATC) Voice Communications Dashboard**.  
 The system ingests live or recorded ATC audio, converts it into text using Speech-to-Text (STT) models, applies Natural Language Processing (NLP) for analysis, and visualizes insights in an interactive dashboard.
 
+<img width="1613" height="812" alt="image" src="https://github.com/user-attachments/assets/f876c232-bd39-477b-ac7d-d5b78e5f695c" />
+
+
 ---
 
 ## 🎯 Objectives
