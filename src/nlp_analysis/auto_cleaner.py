@@ -3,9 +3,10 @@
 Automatic cleaner for categorized_transcription_results.json
 This script continuously monitors and cleans the JSON file to:
 1. Remove entries where "thank you", "thanks", or "thank" is a standalone word or repeated
-2. Remove © symbols and any text following them
-3. Remove repeated patterns (e.g., '? ? ? ?', 'uh uh uh')
-4. Keep the file clean and neat at all times
+2. Remove spam "subscribe" messages (e.g., "Thank you for watching! Please subscribe...")
+3. Remove © symbols and any text following them
+4. Remove repeated patterns (e.g., '? ? ? ?', 'uh uh uh')
+5. Keep the file clean and neat at all times
 """
 
 import json
@@ -48,6 +49,21 @@ class TranscriptionCleaner(FileSystemEventHandler):
         # Pattern 2: Remove repeated single characters/punctuation within text (2+ times)
         # Matches "? ?" or "? ? ?" anywhere in the text
         text = re.sub(r'(\S)\s+\1(?:\s+\1)*', '', text)
+
+        # Pattern 2a: Explicitly remove spaced question-mark sequences (robust to mixed spacing)
+        # e.g., "? ?", "?   ?   ?" -> ""
+        text = re.sub(r'(?:\?\s+){1,}\?', '', text)
+
+        # Pattern 2b: Remove hyphenated stutter of the same letter (e.g., "S-S-S-S-", case-insensitive)
+        # Allows optional spaces around hyphens and an optional trailing hyphen
+        text = re.sub(r'\b([A-Za-z])(?:\s*-\s*\1){2,}-?\b', '', text, flags=re.IGNORECASE)
+
+        # Pattern 2c: Remove laughter strings (e.g., "hahaha", "ahahahaha", long repeats)
+        text = re.sub(r'(?i)(?:ha|ah){3,}', '', text)
+        text = re.sub(r'(?i)(?:heh){2,}', '', text)
+
+        # Pattern 2d: Remove hyphen-dot noise like "-.." or "-...."
+        text = re.sub(r'-\.{2,}', '', text)
         
         # Pattern 3: Remove repeated words (3 or more times)
         # Matches patterns like "uh uh uh" or "the the the"
@@ -121,6 +137,19 @@ class TranscriptionCleaner(FileSystemEventHandler):
                     removed_count += 1
                     continue
                 
+                # Case 3: Check for spam "subscribe" messages
+                # Matches variations of "Thank you for watching! Please subscribe..."
+                if 'subscribe' in raw_text_lower and 'thank' in raw_text_lower:
+                    # Check for common spam patterns
+                    spam_patterns = [
+                        r'thank\s+you\s+for\s+watching.*subscribe',
+                        r'subscribe.*channel.*for\s+more',
+                        r'please\s+subscribe.*channel',
+                    ]
+                    if any(re.search(pattern, raw_text_lower) for pattern in spam_patterns):
+                        removed_count += 1
+                        continue
+                
                 # Clean the text: Remove © and everything after it
                 original_text = raw_text
                 if '©' in raw_text:
@@ -131,6 +160,12 @@ class TranscriptionCleaner(FileSystemEventHandler):
                 text_before_pattern_removal = raw_text
                 raw_text = self.remove_repeated_patterns(raw_text)
                 if raw_text != text_before_pattern_removal:
+                    cleaned_text_count += 1
+                
+                # Remove standalone 'bye' tokens (case-insensitive), optionally followed by punctuation
+                text_before_bye = raw_text
+                raw_text = re.sub(r'\bbye\b[.!?]?', '', raw_text, flags=re.IGNORECASE)
+                if raw_text != text_before_bye:
                     cleaned_text_count += 1
                 
                 # Clean up extra whitespace
@@ -198,8 +233,13 @@ def main():
     print("🔄 Auto-cleaner features:")
     print("   - Removes standalone 'thank you', 'thanks', 'thank' entries")
     print("   - Removes repeated 'thank' patterns (e.g., 'thank thank')")
+    print("   - Removes spam 'subscribe' messages (e.g., 'Thank you for watching! Please subscribe...')")
     print("   - Removes © symbols and text after them")
     print("   - Removes repeated patterns (e.g., '? ? ? ?', 'uh uh uh')")
+    print("   - Removes spaced question-mark sequences (e.g., '? ?', '?   ?')")
+    print("   - Removes standalone 'bye' tokens")
+    print("   - Removes hyphenated stutters (e.g., 'S-S-S-S-') and laughter strings ('hahaha')")
+    print("   - Removes hyphen-dot noise (e.g., '-..')")
     print("   - Cleans up whitespace")
     print("   - Runs continuously")
     print()

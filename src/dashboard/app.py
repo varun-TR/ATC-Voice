@@ -875,7 +875,7 @@ def main():
     st.sidebar.caption("New York ARTCC High Altitude Charts")
 
     # Load and display the ZNY chart
-    chart_path = "src/utils/ZNYHighAltitudeCharts.jpg"
+    chart_path = "src/utils/map.jpeg"
     try:
         st.sidebar.image(chart_path, caption="Sector 09 Monitoring", use_container_width=True)
         st.sidebar.markdown("**📍 Current Sector:** 09")

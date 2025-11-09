@@ -197,15 +197,105 @@ def load_callsigns(callsign_path: Path) -> dict:
     return callsigns
 
 
-def detect_callsign(text: str, callsigns: dict) -> str:
-    """Return the airline name if any of its aliases or codes appear in transcript."""
+def load_phonetic_alphabet(phonetic_path: Path) -> dict:
+    """Load phonetic alphabet mapping."""
+    with open(phonetic_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def words_to_digits(word: str) -> str:
+    """Convert spelled numbers to digits."""
+    mapping = {
+        "zero": "0", "one": "1", "two": "2", "three": "3", "four": "4",
+        "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9",
+        "niner": "9", "fife": "5"
+    }
+    return mapping.get(word, word)
+
+
+def normalize_numbers(tokens: List[str]) -> List[str]:
+    """Convert spelled numbers in list of tokens to digits."""
+    return [words_to_digits(tok) for tok in tokens]
+
+
+def detect_callsign(text: str, callsigns: dict, phonetic_dict: dict = None) -> str:
+    """Return the airline name or GA tail number if detected in transcript."""
     if not text:
         return "Unknown"
-    t = preprocess_transcript(text)
     
+    t = preprocess_transcript(text)
+    text_upper = text.upper()
+    
+    # --- General Aviation Tail Number Detection (check first) ---
+    # Check for direct N-numbers (e.g., N5194, N2905X)
+    direct_match = re.search(r"\bN\d{1,5}[A-Z]{0,2}\b", text_upper)
+    if direct_match:
+        return f"General Aviation ({direct_match.group(0)})"
+    
+    # Decode phonetic GA sequences like "November six seven alpha foxtrot"
+    if phonetic_dict:
+        # Look for "november" followed by up to 7 tokens (max tail: 5 digits + 2 letters)
+        ga_match = re.search(r"\bnovember(?:\s+[\w]+){1,7}\b", t)
+        if ga_match:
+            phrase = ga_match.group(0)
+            tokens = re.split(r"[\s\-]+", phrase.strip())
+            tokens = normalize_numbers(tokens)
+            
+            tail = "N"
+            digit_count = 0
+            letter_count = 0
+            
+            for token in tokens[1:]:  # Skip "november"
+                if token in phonetic_dict:
+                    if digit_count == 0:  # Letters before digits are invalid
+                        break
+                    if letter_count >= 2:  # Max 2 letters
+                        break
+                    tail += phonetic_dict[token]
+                    letter_count += 1
+                elif token.isdigit():
+                    if letter_count > 0:  # No digits after letters
+                        break
+                    # Can be multi-digit like "1234"
+                    new_digit_count = digit_count + len(token)
+                    if new_digit_count > 5:  # Max 5 digits total
+                        break
+                    tail += token
+                    digit_count = new_digit_count
+                elif len(token) == 1 and token.isalpha():
+                    if digit_count == 0:  # Letters before digits are invalid
+                        break
+                    if letter_count >= 2:  # Max 2 letters
+                        break
+                    tail += token.upper()
+                    letter_count += 1
+                else:
+                    # Stop at invalid token
+                    break
+            
+            tail = re.sub(r"[^A-Z0-9]", "", tail)
+            
+            # FAA format validation: N + 1–5 digits + 0–2 letters
+            if re.match(r"^N\d{1,5}[A-Z]{0,2}$", tail) and digit_count >= 1:
+                return f"General Aviation ({tail})"
+    
+    # --- Commercial Airline Callsign Detection (after GA check) ---
     # Try exact matches with word boundaries
     for alias, airline in callsigns.items():
         if re.search(rf"\b{re.escape(alias.lower())}\b", t):
+            # Handle ambiguous "delta" case
+            if alias.lower() == "delta":
+                # Skip if it's part of a GA phrase
+                if re.search(r"\bnovember\b", t):
+                    continue
+                # If used with phonetic patterns, treat as GA
+                if re.search(r"\bdelta (alpha|bravo|charlie|echo|foxtrot|golf|hotel|india|juliet|kilo|lima|mike|oscar|papa|quebec|romeo|sierra|tango|uniform|victor|whiskey|xray|yankee|zulu)\b", t):
+                    continue
+                # If followed by valid flight number, it's an airline
+                if re.search(r"\bdelta (\d+|one|two|three|four|five|six|seven|eight|nine|zero)\b", t):
+                    return airline
+                continue
+            
             return airline
     
     # Try substring matches for callsigns
@@ -225,28 +315,66 @@ def categorize_communication(text: str, category_keywords: dict, fuzzy_threshold
     text_lower = preprocess_transcript(text).lower()
     # Remove punctuation for matching
     text_clean = text_lower.translate(str.maketrans('', '', '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'))
-    
+
+    # Helper: stricter emergency gating
+    def _is_true_emergency(t: str) -> bool:
+        # Strong positive patterns
+        positive_patterns = [
+            r"\bmayday\b",
+            r"\bpan(?:\s+pan){1,2}\b",
+            r"\bdeclaring (an )?emergency\b",
+            r"\bmedical emergency\b",
+            r"\bfuel emergency\b",
+            r"\bsquawk(?:ing)?\s*7700\b",
+            r"\bengine (?:failure|out)\b",
+            r"\bsmoke (?:in|on)\b",
+            r"\bfire (?:on board|in (?:cabin|cockpit))\b",
+            r"\bpriority (?:landing|handling)\b",
+            r"\bunabl[e]? to maintain altitude\b",
+            r"\blost communications\b"
+        ]
+        for pat in positive_patterns:
+            if re.search(pat, t):
+                return True
+        # If only the token 'emergency' appears, require supporting context
+        if re.search(r"\bemergency\b", t):
+            # Likely misrecognition cases: 'emergency' followed by numbers/flight-like tokens
+            if re.search(r"\bemergency\s+[a-zA-Z]*\d+", t):
+                return False
+            # Greetings + 'emergency' without declarative verbs
+            if re.search(r"\b(good (afternoon|morning|evening)\s+)?emergency\b", t) and not re.search(r"\b(declare|declaring|mayday|pan)\b", t):
+                return False
+            # Require at least one supporting keyword if 'emergency' is present
+            if not re.search(r"\b(declare|declaring|request|need|medical|fuel|priority|mayday|pan|7700|squawk)\b", t):
+                return False
+            return True
+        return False
+
     # Separate "Miscellaneous" from other categories to check it last
     other_categories = {k: v for k, v in category_keywords.items() if k.lower() != "miscellaneous"}
     misc_keywords = category_keywords.get("Miscellaneous", [])
-    
+
     # Check specific categories first (not Miscellaneous)
     for category, keywords in other_categories.items():
         for keyword in keywords:
             # Clean keyword: lowercase and remove punctuation
             kw_clean = keyword.lower().translate(str.maketrans('', '', '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'))
-            
+
             # Check if keyword appears in text
             if kw_clean in text_clean:
+                # Harden emergency detection: avoid false positives on lone 'emergency'
+                if category.lower() == "emergency declarations":
+                    if not _is_true_emergency(text_lower):
+                        continue  # skip emergency category if not strongly supported
                 return category
-    
+
     # Then check Miscellaneous category if it exists
     if misc_keywords:
         for keyword in misc_keywords:
             kw_clean = keyword.lower().translate(str.maketrans('', '', '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'))
             if kw_clean in text_clean:
                 return "Miscellaneous"
-    
+
     # Fallback if no keyword matches
     return "General Communications"
 
@@ -394,6 +522,7 @@ def setup_paths():
         "unified_config": config_dir / "final_aviation_ultimate_with_emergency.json",
         "category_dict": config_dir / "category_dict.json",
         "callsign": config_dir / "airline_callsign.json",
+        "phonetic": config_dir / "phonetic_alphabet.json",
         "input": input_dir / "transcripts.json",
         "output": output_dir / "categorized_transcription_results.json"
     }
@@ -479,10 +608,11 @@ def append_categorized_data(new_items: List[Dict[str, Any]], output_path: Path,
 class TranscriptionFileHandler(FileSystemEventHandler):
     """Handle file system events for transcription file."""
     
-    def __init__(self, paths: dict, category_keywords: dict, airline_callsigns: dict):
+    def __init__(self, paths: dict, category_keywords: dict, airline_callsigns: dict, phonetic_dict: dict = None):
         self.paths = paths
         self.category_keywords = category_keywords
         self.airline_callsigns = airline_callsigns
+        self.phonetic_dict = phonetic_dict or {}
         self.last_processed_size = 0
         
         # Initialize with current file size
@@ -547,7 +677,7 @@ class TranscriptionFileHandler(FileSystemEventHandler):
                     continue
                 
                 category = categorize_communication(raw_text, self.category_keywords)
-                callsign = detect_callsign(raw_text, self.airline_callsigns)
+                callsign = detect_callsign(raw_text, self.airline_callsigns, self.phonetic_dict)
                 
                 item["category"] = category
                 item["airline"] = callsign if callsign else "Unknown"
@@ -576,7 +706,7 @@ class TranscriptionFileHandler(FileSystemEventHandler):
 
 
 # ------------------------------ Main Logic ------------------------------ #
-def process_transcripts_once(paths: dict, category_keywords: dict, airline_callsigns: dict):
+def process_transcripts_once(paths: dict, category_keywords: dict, airline_callsigns: dict, phonetic_dict: dict = None):
     """Process all transcripts once (initial run or manual processing)."""
     print("📖 Reading transcripts...\n")
 
@@ -617,7 +747,7 @@ def process_transcripts_once(paths: dict, category_keywords: dict, airline_calls
             continue
         
         category = categorize_communication(raw_text, category_keywords)
-        callsign = detect_callsign(raw_text, airline_callsigns)
+        callsign = detect_callsign(raw_text, airline_callsigns, phonetic_dict)
 
         # Count category
         counts[category] = counts.get(category, 0) + 1
@@ -681,7 +811,7 @@ def process_transcripts_once(paths: dict, category_keywords: dict, airline_calls
     print(f"📝 Results saved to: {paths['output']}")
 
 
-def start_live_monitoring(paths: dict, category_keywords: dict, airline_callsigns: dict):
+def start_live_monitoring(paths: dict, category_keywords: dict, airline_callsigns: dict, phonetic_dict: dict = None):
     """Start live monitoring of transcription file."""
     print("\n🔄 Starting live monitoring mode...")
     print(f"📁 Monitoring: {paths['input']}")
@@ -689,10 +819,10 @@ def start_live_monitoring(paths: dict, category_keywords: dict, airline_callsign
     print("-" * 70)
     
     # Process any existing unprocessed transcripts first
-    process_transcripts_once(paths, category_keywords, airline_callsigns)
+    process_transcripts_once(paths, category_keywords, airline_callsigns, phonetic_dict)
     
     # Set up file monitoring
-    event_handler = TranscriptionFileHandler(paths, category_keywords, airline_callsigns)
+    event_handler = TranscriptionFileHandler(paths, category_keywords, airline_callsigns, phonetic_dict)
     observer = Observer()
     observer.schedule(event_handler, path=str(paths['input'].parent), recursive=False)
     
@@ -752,13 +882,20 @@ def main(debug=False, live_mode=False):
     
     print("Loading unified configuration...")
     category_keywords, airline_callsigns = load_unified_config(paths['unified_config'])
-
-    print(f"✅ Loaded {len(category_keywords)} categories and {len(airline_callsigns)} callsigns.")
+    
+    # Load phonetic alphabet for General Aviation detection
+    phonetic_dict = {}
+    if paths['phonetic'].exists():
+        phonetic_dict = load_phonetic_alphabet(paths['phonetic'])
+        print(f"✅ Loaded {len(category_keywords)} categories, {len(airline_callsigns)} callsigns, and {len(phonetic_dict)} phonetic mappings.")
+    else:
+        print(f"✅ Loaded {len(category_keywords)} categories and {len(airline_callsigns)} callsigns.")
+        print("⚠️  Phonetic alphabet not found - General Aviation detection may be limited.")
     
     if live_mode:
-        start_live_monitoring(paths, category_keywords, airline_callsigns)
+        start_live_monitoring(paths, category_keywords, airline_callsigns, phonetic_dict)
     else:
-        process_transcripts_once(paths, category_keywords, airline_callsigns)
+        process_transcripts_once(paths, category_keywords, airline_callsigns, phonetic_dict)
 
 
 if __name__ == "__main__":
