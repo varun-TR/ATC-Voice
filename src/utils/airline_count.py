@@ -1,164 +1,223 @@
 import json
 import re
-import sys
 from pathlib import Path
 from typing import Dict, List, Any
-from difflib import get_close_matches
 
-
-# ----------------------------- Utility Helpers ----------------------------- #
+# ---------- Utility helpers ----------
 def words_to_digits(word: str) -> str:
-    """Convert spelled numbers to digits."""
     mapping = {
-        "zero": "0", "one": "1", "two": "2", "three": "3", "four": "4",
-        "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9"
+        'zero': '0', 'oh': '0', 'o': '0',
+        'one': '1', 'won': '1',
+        'two': '2', 'too': '2',
+        'three': '3', 'tree': '3',
+        'four': '4', 'fore': '4',
+        'five': '5', 'fife': '5',
+        'six': '6',
+        'seven': '7',
+        'eight': '8', 'ate': '8',
+        'nine': '9', 'niner': '9'
     }
     return mapping.get(word, word)
 
+def combine_number_words(tokens: List[str]) -> List[str]:
+    tens_map = {
+        "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
+        "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90
+    }
+    result = []
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if tok in tens_map and i + 1 < len(tokens):
+            nxt = tokens[i + 1]
+            if nxt in ["one","two","three","four","five","six","seven","eight","nine"]:
+                num = tens_map[tok] + int(words_to_digits(nxt))
+                result.append(str(num))
+                i += 2
+                continue
+        result.append(tok)
+        i += 1
+    return result
 
 def normalize_numbers(tokens: List[str]) -> List[str]:
-    """Convert spelled numbers in list of tokens to digits."""
     return [words_to_digits(tok) for tok in tokens]
 
+def decode_phonetic_sequence(text: str, phonetic_dict: Dict[str, str]) -> str:
+    tokens = re.split(r"[\s\-]+", text.lower().strip())
+    tokens = combine_number_words(tokens)
+    tokens = normalize_numbers(tokens)
+    decoded = []
+    for tok in tokens:
+        if tok in phonetic_dict:
+            decoded.append(phonetic_dict[tok].upper())
+        elif tok.isdigit():
+            decoded.append(tok)
+        elif len(tok) == 1 and tok.isalpha():
+            decoded.append(tok.upper())
+    return " ".join(decoded)
 
-# ----------------------------- Preprocessing ----------------------------- #
 def preprocess_transcript(text: str) -> str:
-    """Normalize transcript for consistent matching."""
-    if not text or text.strip() == "":
+    if not text:
         return ""
-    text = text.lower()
-    text = re.sub(r"[^a-z0-9\s\-]", " ", text)
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
+    text = re.sub(r"[^a-z0-9\s\-]", " ", text.lower())
+    return re.sub(r"\s+", " ", text).strip()
 
-
-# ----------------------------- Loaders ----------------------------- #
-def load_callsigns(callsign_path: Path) -> dict:
-    with open(callsign_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    callsigns = {}
-    for airline, aliases in data.items():
-        for alias in aliases:
-            callsigns[alias.lower()] = airline
-    return callsigns
-
-
-def load_phonetic_alphabet(phonetic_path: Path) -> dict:
-    with open(phonetic_path, "r", encoding="utf-8") as f:
+def load_json(path: Path) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
+# ---------- N-number validator ----------
+def is_valid_ga_tail(tail: str) -> bool:
+    if not tail or not tail.startswith("N"):
+        return False
+    tail = tail.upper()
+    if len(tail) > 6:
+        return False
+    m = re.match(r"^N([1-9]\d{0,4})([A-HJ-NP-Z]{0,2})$", tail)
+    if not m:
+        return False
+    n_digits = m.group(1)
+    letters = m.group(2)
+    if 1 <= int(n_digits) <= 99 and not letters:
+        return False
+    return True
 
-# ----------------------------- Detection Logic ----------------------------- #
-def detect_callsign(text: str, callsigns: Dict[str, str], phonetic_dict: Dict[str, str]) -> str:
-    """Detect airline or general aviation callsign."""
+# ---------- Flight detection ----------
+def detect_callsign(text: str,
+                    callsigns: Dict[str, list],
+                    phonetic_dict: Dict[str, str],
+                    nnumber_lookup: Dict[str, str]) -> str:
     if not text:
         return "Unknown"
 
     t = preprocess_transcript(text)
+    tokens = re.split(r"[\s\-]+", t)
+    tokens = combine_number_words(tokens)
+    tokens = normalize_numbers(tokens)
 
-    # ---  General Aviation Tail Number Detection ---
-    # Check for direct N-numbers (e.g., N5194, N2905X)
-    direct_match = re.search(r"\bN\d{1,5}[A-Z]{0,2}\b", text.upper())
-    if direct_match:
-        return f"General Aviation ({direct_match.group(0)})"
-
-    # Decode phonetic GA sequences like “November six seven alpha foxtrot”
-    ga_match = re.search(r"\bnovember[\s\-a-z0-9]+\b", t)
-    if ga_match:
-        phrase = ga_match.group(0)
-        tokens = re.split(r"[\s\-]+", phrase.strip())
-        tokens = normalize_numbers(tokens)
-
-        tail = "N"
-        for token in tokens[1:]:
-            if token in phonetic_dict:
-                tail += phonetic_dict[token]
-            elif token.isdigit():
-                tail += token
-            elif len(token) == 1 and token.isalpha():
-                tail += token.upper()
-
-        tail = re.sub(r"[^A-Z0-9]", "", tail)
-
-        # FAA format validation: N + 1–5 digits + 0–2 letters
-        if re.match(r"^N\d{1,5}[A-Z]{0,2}$", tail):
-            return f"General Aviation ({tail})"
-
-    # --- ⃣ Airline Callsign Detection (after GA check) ---
-    for alias, airline in callsigns.items():
-        if re.search(rf"\b{re.escape(alias.lower())}\b", t):
-            # --- Handle ambiguous cases like "delta" ---
-            if alias.lower() == "delta":
-                # Skip if it’s part of a GA phrase (e.g., November 23 Delta)
-                if re.search(r"\bnovember\b", t):
+    # --- 1️⃣ Airline / military alias detection ---
+    decoded_flat = decode_phonetic_sequence(t, phonetic_dict)
+    decoded_flat_clean = re.sub(r"[^A-Z0-9]", "", decoded_flat)
+    for airline, aliases in callsigns.items():
+        aliases = [aliases] if isinstance(aliases, str) else aliases
+        for alias in aliases:
+            alias_low = alias.lower()
+            alias_up = alias.upper()
+            if alias_low == "india" and not re.search(r"\bair\s+india\b", t):
+                continue
+            if alias_low == "delta":
+                if re.search(r"\b(lufthansa|american|united|jetblue|british|air\s+canada|air\s+france)\b", t):
                     continue
-
-                # If "delta" is used with phonetic-like patterns, treat as GA
-                if re.search(r"\bdelta (alpha|bravo|charlie|delta|echo|foxtrot|golf|hotel|india|juliet|kilo|lima|mike|november|oscar|papa|quebec|romeo|sierra|tango|uniform|victor|whiskey|xray|yankee|zulu)\b", t):
+                if re.search(
+                        r"\bdelta (alpha|bravo|charlie|delta|echo|foxtrot|golf|hotel|india|juliet|kilo|lima|mike|november|oscar|papa|quebec|romeo|sierra|tango|uniform|victor|whiskey|xray|yankee|zulu)\b",
+                        t):
                     continue
-
-                # If it's followed by a valid flight number (digits or spoken digits)
-                if re.search(r"\bdelta (\d+|one|two|three|four|five|six|seven|eight|nine|zero)\b", t):
+                if re.search(
+                        r"\bdelta (\d+|one|two|three|four|five|six|seven|eight|nine|zero|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)\b",
+                        t
+                ):
                     return airline
 
-                # Otherwise, likely not an airline call
                 continue
+            if alias_up in decoded_flat_clean or re.search(rf"\b{re.escape(alias_low)}\b", t):
+                return airline
 
-            # For all other aliases
-            return airline
+    # --- November-based N-number detection (FAA format) ---
+    if "november" in t:
+        after = re.split(r"\bnovember\b", t, maxsplit=1)[-1].strip()
+        parts = re.split(r"[\s\-]+", after)
+        tail_raw = "".join(
+            [phonetic_dict.get(p, p).upper() if p in phonetic_dict else p for p in parts[:6]]
+        )
+        tail = "N" + re.sub(r"[^A-Z0-9]", "", tail_raw)
+
+        # must contain both digits & letters
+        if re.search(r"\d", tail) and re.search(r"[A-Z]", tail) and is_valid_ga_tail(tail):
+            owner_name = nnumber_lookup.get(tail, "")
+            if owner_name:
+                return f"General Aviation ({tail})"
+            else:
+                return "Unknown"
+
+    # --- No “November” → detect mixed digit-letter patterns---
+    tail_tokens: List[str] = []
+    for i, tok in enumerate(tokens + ["STOP"]):
+        tok_low = tok.lower()
+        if tok.isdigit() or tok_low in phonetic_dict:
+            tail_tokens.append(tok)
+        else:
+            if tail_tokens:
+                tail_raw = "".join(
+                    [phonetic_dict.get(x.lower(), x).upper() if x.lower() in phonetic_dict else x.upper()
+                     for x in tail_tokens]
+                )
+                tail_raw = re.sub(r"[^A-Z0-9]", "", tail_raw)
+                # require at least one digit and one letter
+                if not (re.search(r"\d", tail_raw) and re.search(r"[A-Z]", tail_raw)):
+                    tail_tokens = []
+                    continue
+                tail = "N" + tail_raw
+                if is_valid_ga_tail(tail):
+                    owner_name = nnumber_lookup.get(tail, "")
+                    if owner_name:
+                        return f"General Aviation ({tail})"
+                    else:
+                        return "Unknown"
+            tail_tokens = []
 
 
     return "Unknown"
 
 
-# ----------------------------- Main Logic ----------------------------- #
-def main(debug=False):
-    base_dir = Path("/Users/anushadusakanti/PycharmProjects/690Project")
 
+# ---------- Main ----------
+def main():
+    base_dir = Path(".")
     callsign_path = base_dir / "airline_callsign.json"
     phonetic_path = base_dir / "phonetic_alphabet.json"
-
-    input_path = "/Users/anushadusakanti/Downloads/transcripts.json"
+    nnumber_lookup_path = base_dir / "airline_nnumbers.json"
+    input_path = base_dir / "new_transcription.json"
     output_path = base_dir / "airlinecount.json"
 
     print("Loading dictionaries...")
-    airline_callsigns = load_callsigns(callsign_path)
-    phonetic_dict = load_phonetic_alphabet(phonetic_path)
+    callsigns = load_json(callsign_path)
+    phonetic_dict = load_json(phonetic_path)
+    nnumber_lookup = load_json(nnumber_lookup_path)
 
-    print(f"Loaded {len(airline_callsigns)} airline aliases and {len(phonetic_dict)} phonetic codes.")
-    print(f"Reading transcripts from {input_path}...\n")
-
+    print("Reading transcripts...")
     with open(input_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     items = data.get("items", [])
-    airline_counts: Dict[str, int] = {}
-    detected_items: List[Dict[str, Any]] = []
+    counts, detected_items = {}, []
 
     for item in items:
-        raw_text = item.get("raw_transcription", "")
-        detected_airline = detect_callsign(raw_text, airline_callsigns, phonetic_dict)
-        airline_counts[detected_airline] = airline_counts.get(detected_airline, 0) + 1
-        item["airline"] = detected_airline
+        raw = item.get("raw_transcription", "")
+        detected = detect_callsign(raw, callsigns, phonetic_dict, nnumber_lookup)
+        ga_owner = None
+        if detected.startswith("General Aviation"):
+            match = re.search(r"\((N[0-9A-Z]+)\)", detected)
+            if match:
+                tail = match.group(1)
+                owner = nnumber_lookup.get(tail)
+                if owner:
+                    if isinstance(owner, list):
+                        owner = " ".join(owner)
+                    ga_owner = str(owner)
+        counts[detected] = counts.get(detected, 0) + 1
+        item["airline"] = detected
+        if ga_owner:
+            item["registration_name"] = ga_owner
         detected_items.append(item)
 
     output = {"items": detected_items}
-
-    print(f"Saving results to {output_path}...\n")
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
 
-    print("Summary of detected airlines:")
-    for airline, cnt in sorted(airline_counts.items(), key=lambda x: x[1], reverse=True):
-        print(f"{airline:<40} {cnt}")
-
-    print(f"\nTotal communications processed: {len(items)}")
-
+    print("\n--- Summary ---")
+    for k, v in sorted(counts.items(), key=lambda x: x[1], reverse=True):
+        print(f"{k:<35} {v}")
+    print(f"\nTotal processed: {len(items)}")
 
 if __name__ == "__main__":
-    try:
-        main(debug=False)
-    except KeyboardInterrupt:
-        print("\nInterrupted.")
-        sys.exit(130)
+    main()
