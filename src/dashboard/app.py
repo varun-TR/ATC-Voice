@@ -12,7 +12,9 @@ import psutil
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from functools import lru_cache
+from dataclasses import dataclass
 import math
+import statistics
 
 # Set page config
 st.set_page_config(
@@ -26,42 +28,107 @@ st.set_page_config(
 BASE_DIR = Path(".")
 TRANSCRIPTIONS_FILE = BASE_DIR / "src" / "data" / "logs" / "transcripts" / "categorized_transcription_results.json"
 COMMUNICATIONS_FILE = BASE_DIR / "src" / "data" / "logs" / "atc_communications.txt"
-AIRLINE_CALLSIGN_FILE = BASE_DIR / "config" / "airline_callsign.json"
-PHONETIC_ALPHABET_FILE = BASE_DIR / "config" / "phonetic_alphabet.json"
+AIRLINE_CALLSIGN_FILE = BASE_DIR / "config" / "airline_callsign (2).json"
+PHONETIC_ALPHABET_FILE = BASE_DIR / "config" / "phonetic_alphabet (1).json"
+AIRLINE_NNUMBERS_FILE = BASE_DIR / "config" / "airline_nnumbers.json"
 
 # ----------------------------- Airline Detection Logic ----------------------------- #
 @st.cache_resource
 def load_airline_configs():
-    """Load airline callsign and phonetic alphabet configs."""
+    """Load airline callsign, phonetic alphabet, and N-numbers configs."""
     try:
         with open(AIRLINE_CALLSIGN_FILE, 'r', encoding='utf-8') as f:
-            airline_data = json.load(f)
-        
+            callsigns = json.load(f)
+
         with open(PHONETIC_ALPHABET_FILE, 'r', encoding='utf-8') as f:
-            phonetic_data = json.load(f)
-        
-        # Flatten airline callsigns
-        callsigns = {}
-        for airline, aliases in airline_data.items():
-            for alias in aliases:
-                callsigns[alias.lower()] = airline
-        
-        return callsigns, phonetic_data
+            phonetic_dict = json.load(f)
+
+        with open(AIRLINE_NNUMBERS_FILE, 'r', encoding='utf-8') as f:
+            nnumber_lookup = json.load(f)
+
+        return callsigns, phonetic_dict, nnumber_lookup
     except Exception as e:
         st.error(f"Error loading airline configs: {e}")
-        return {}, {}
+        return {}, {}, {}
 
 def words_to_digits(word: str) -> str:
     """Convert spelled numbers to digits."""
     mapping = {
-        "zero": "0", "one": "1", "two": "2", "three": "3", "four": "4",
-        "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9"
+        'zero': '0', 'oh': '0', 'o': '0',
+        'one': '1', 'won': '1',
+        'two': '2', 'too': '2',
+        'three': '3', 'tree': '3',
+        'four': '4', 'fore': '4',
+        'five': '5', 'fife': '5',
+        'six': '6',
+        'seven': '7',
+        'eight': '8', 'ate': '8',
+        'nine': '9', 'niner': '9'
     }
     return mapping.get(word, word)
+
+def combine_number_words(tokens: List[str]) -> List[str]:
+    """Combine tens and ones words (e.g., 'twenty one' -> '21')."""
+    tens_map = {
+        "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
+        "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90
+    }
+    result = []
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if tok in tens_map and i + 1 < len(tokens):
+            nxt = tokens[i + 1]
+            if nxt in ["one","two","three","four","five","six","seven","eight","nine"]:
+                num = tens_map[tok] + int(words_to_digits(nxt))
+                result.append(str(num))
+                i += 2
+                continue
+        result.append(tok)
+        i += 1
+    return result
 
 def normalize_numbers(tokens: List[str]) -> List[str]:
     """Convert spelled numbers in list of tokens to digits."""
     return [words_to_digits(tok) for tok in tokens]
+
+def decode_phonetic_sequence(text: str, phonetic_dict: Dict[str, str]) -> str:
+    """Decode phonetic alphabet sequences into letters."""
+    tokens = re.split(r"[\s\-]+", text.lower().strip())
+    tokens = combine_number_words(tokens)
+    tokens = normalize_numbers(tokens)
+    decoded = []
+    for tok in tokens:
+        if tok in phonetic_dict:
+            decoded.append(phonetic_dict[tok].upper())
+        elif tok.isdigit():
+            decoded.append(tok)
+        elif len(tok) == 1 and tok.isalpha():
+            decoded.append(tok.upper())
+    return " ".join(decoded)
+
+def preprocess_transcript(text: str) -> str:
+    """Normalize transcript for airline matching."""
+    if not text:
+        return ""
+    text = re.sub(r"[^a-z0-9\s\-]", " ", text.lower())
+    return re.sub(r"\s+", " ", text).strip()
+
+def is_valid_ga_tail(tail: str) -> bool:
+    """Validate FAA general aviation tail number format."""
+    if not tail or not tail.startswith("N"):
+        return False
+    tail = tail.upper()
+    if len(tail) > 6:
+        return False
+    m = re.match(r"^N([1-9]\d{0,4})([A-HJ-NP-Z]{0,2})$", tail)
+    if not m:
+        return False
+    n_digits = m.group(1)
+    letters = m.group(2)
+    if 1 <= int(n_digits) <= 99 and not letters:
+        return False
+    return True
 
 def preprocess_transcript_airline(text: str) -> str:
     """Normalize transcript for airline matching."""
@@ -72,63 +139,88 @@ def preprocess_transcript_airline(text: str) -> str:
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
-def detect_airline_callsign(text: str, callsigns: Dict[str, str], phonetic_dict: Dict[str, str]) -> str:
-    """Detect airline or general aviation callsign using enhanced logic."""
+def detect_callsign(text: str,
+                    callsigns: Dict[str, list],
+                    phonetic_dict: Dict[str, str],
+                    nnumber_lookup: Dict[str, str]) -> str:
+    """Detect airline or general aviation callsign using comprehensive logic."""
     if not text:
         return "Unknown"
 
-    t = preprocess_transcript_airline(text)
+    t = preprocess_transcript(text)
+    tokens = re.split(r"[\s\-]+", t)
+    tokens = combine_number_words(tokens)
+    tokens = normalize_numbers(tokens)
 
-    # ---  General Aviation Tail Number Detection ---
-    # Check for direct N-numbers (e.g., N5194, N2905X)
-    direct_match = re.search(r"\bN\d{1,5}[A-Z]{0,2}\b", text.upper())
-    if direct_match:
-        return f"General Aviation ({direct_match.group(0)})"
-
-    # Decode phonetic GA sequences like "November six seven alpha foxtrot"
-    ga_match = re.search(r"\bnovember[\s\-a-z0-9]+\b", t)
-    if ga_match:
-        phrase = ga_match.group(0)
-        tokens = re.split(r"[\s\-]+", phrase.strip())
-        tokens = normalize_numbers(tokens)
-
-        tail = "N"
-        for token in tokens[1:]:
-            if token in phonetic_dict:
-                tail += phonetic_dict[token]
-            elif token.isdigit():
-                tail += token
-            elif len(token) == 1 and token.isalpha():
-                tail += token.upper()
-
-        tail = re.sub(r"[^A-Z0-9]", "", tail)
-
-        # FAA format validation: N + 1–5 digits + 0–2 letters
-        if re.match(r"^N\d{1,5}[A-Z]{0,2}$", tail):
-            return f"General Aviation ({tail})"
-
-    # --- Airline Callsign Detection (after GA check) ---
-    for alias, airline in callsigns.items():
-        if re.search(rf"\b{re.escape(alias.lower())}\b", t):
-            # --- Handle ambiguous cases like "delta" ---
-            if alias.lower() == "delta":
-                # Skip if it's part of a GA phrase (e.g., November 23 Delta)
-                if re.search(r"\bnovember\b", t):
+    # --- 1️⃣ Airline / military alias detection ---
+    decoded_flat = decode_phonetic_sequence(t, phonetic_dict)
+    decoded_flat_clean = re.sub(r"[^A-Z0-9]", "", decoded_flat)
+    for airline, aliases in callsigns.items():
+        aliases = [aliases] if isinstance(aliases, str) else aliases
+        for alias in aliases:
+            alias_low = alias.lower()
+            alias_up = alias.upper()
+            if alias_low == "india" and not re.search(r"\bair\s+india\b", t):
+                continue
+            if alias_low == "delta":
+                if re.search(r"\b(lufthansa|american|united|jetblue|british|air\s+canada|air\s+france)\b", t):
                     continue
-
-                # If "delta" is used with phonetic-like patterns, treat as GA
-                if re.search(r"\bdelta (alpha|bravo|charlie|delta|echo|foxtrot|golf|hotel|india|juliet|kilo|lima|mike|november|oscar|papa|quebec|romeo|sierra|tango|uniform|victor|whiskey|xray|yankee|zulu)\b", t):
+                if re.search(
+                        r"\bdelta (alpha|bravo|charlie|delta|echo|foxtrot|golf|hotel|india|juliet|kilo|lima|mike|november|oscar|papa|quebec|romeo|sierra|tango|uniform|victor|whiskey|xray|yankee|zulu)\b",
+                        t):
                     continue
-
-                # If it's followed by a valid flight number (digits or spoken digits)
-                if re.search(r"\bdelta (\d+|one|two|three|four|five|six|seven|eight|nine|zero)\b", t):
+                if re.search(
+                        r"\bdelta (\d+|one|two|three|four|five|six|seven|eight|nine|zero|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)\b",
+                        t
+                ):
                     return airline
 
-                # Otherwise, likely not an airline call
                 continue
+            if alias_up in decoded_flat_clean or re.search(rf"\b{re.escape(alias_low)}\b", t):
+                return airline
 
-            # For all other aliases
-            return airline
+    # --- November-based N-number detection (FAA format) ---
+    if "november" in t:
+        after = re.split(r"\bnovember\b", t, maxsplit=1)[-1].strip()
+        parts = re.split(r"[\s\-]+", after)
+        tail_raw = "".join(
+            [phonetic_dict.get(p, p).upper() if p in phonetic_dict else p for p in parts[:6]]
+        )
+        tail = "N" + re.sub(r"[^A-Z0-9]", "", tail_raw)
+
+        # must contain both digits & letters
+        if re.search(r"\d", tail) and re.search(r"[A-Z]", tail) and is_valid_ga_tail(tail):
+            owner_name = nnumber_lookup.get(tail, "")
+            if owner_name:
+                return f"General Aviation ({tail})"
+            else:
+                return "Unknown"
+
+    # --- No "November" → detect mixed digit-letter patterns---
+    tail_tokens: List[str] = []
+    for i, tok in enumerate(tokens + ["STOP"]):
+        tok_low = tok.lower()
+        if tok.isdigit() or tok_low in phonetic_dict:
+            tail_tokens.append(tok)
+        else:
+            if tail_tokens:
+                tail_raw = "".join(
+                    [phonetic_dict.get(x.lower(), x).upper() if x.lower() in phonetic_dict else x.upper()
+                     for x in tail_tokens]
+                )
+                tail_raw = re.sub(r"[^A-Z0-9]", "", tail_raw)
+                # require at least one digit and one letter
+                if not (re.search(r"\d", tail_raw) and re.search(r"[A-Z]", tail_raw)):
+                    tail_tokens = []
+                    continue
+                tail = "N" + tail_raw
+                if is_valid_ga_tail(tail):
+                    owner_name = nnumber_lookup.get(tail, "")
+                    if owner_name:
+                        return f"General Aviation ({tail})"
+                    else:
+                        return "Unknown"
+            tail_tokens = []
 
     return "Unknown"
 
@@ -211,13 +303,30 @@ def load_transcription_data(_refresh_key: int = 0) -> Optional[pd.DataFrame]:
             df['airline'] = 'Unknown'
         
         # Only re-detect airlines for entries marked as "Unknown"
-        callsigns, phonetic_dict = load_airline_configs()
+        callsigns, phonetic_dict, nnumber_lookup = load_airline_configs()
         if callsigns:  # Only if configs loaded successfully
             unknown_mask = df['airline'] == 'Unknown'
             if unknown_mask.any():
-                df.loc[unknown_mask, 'airline'] = df.loc[unknown_mask, 'raw_transcription'].apply(
-                    lambda text: detect_airline_callsign(text, callsigns, phonetic_dict)
-                )
+                # Create a function that returns both airline and registration name
+                def detect_with_registration(text):
+                    airline = detect_callsign(text, callsigns, phonetic_dict, nnumber_lookup)
+                    registration_name = None
+                    if airline.startswith("General Aviation"):
+                        match = re.search(r"\((N[0-9A-Z]+)\)", airline)
+                        if match:
+                            tail = match.group(1)
+                            owner = nnumber_lookup.get(tail)
+                            if owner:
+                                if isinstance(owner, list):
+                                    owner = " ".join(owner)
+                                registration_name = str(owner)
+                    return airline, registration_name
+
+                # Apply detection and get both airline and registration name
+                results = df.loc[unknown_mask, 'raw_transcription'].apply(detect_with_registration)
+                df.loc[unknown_mask, 'airline'] = results.apply(lambda x: x[0])
+                df['registration_name'] = None  # Initialize column
+                df.loc[unknown_mask, 'registration_name'] = results.apply(lambda x: x[1])
         
         return df
     
@@ -400,20 +509,289 @@ def clean_transcription_text(text: str) -> str:
 def extract_flight_number(text: str) -> str:
     if not text:
         return "Unknown"
-    
+
     # Common flight number patterns
     patterns = [
         r'\b([A-Z]{2,3})\s*(\d{3,4})\b',  # AA1234, DL567
         r'\b([A-Z]+\d{2,4})\b',           # United1993
         r'\b(\d{3,4})\b'                  # Just numbers
     ]
-    
+
     for pattern in patterns:
         match = re.search(pattern, text)
         if match:
             return match.group(0)
-    
+
     return "Unknown"
+
+# ====== ATC-Pilot Pairing Logic (adapted from pair_timeinterval_atc.py) ======
+
+# Configurable dictionaries (ICAO/FAA-informed)
+NATO = {
+    "alpha":"A","bravo":"B","charlie":"C","delta":"D","echo":"E","foxtrot":"F","golf":"G",
+    "hotel":"H","india":"I","juliett":"J","kilo":"K","lima":"L","mike":"M","november":"N",
+    "oscar":"O","papa":"P","quebec":"Q","romeo":"R","sierra":"S","tango":"T","uniform":"U",
+    "victor":"V","whiskey":"W","x-ray":"X","xray":"X","yankee":"Y","zulu":"Z"
+}
+NUM_WORDS = {
+    "zero":"0","one":"1","two":"2","three":"3","four":"4","five":"5",
+    "six":"6","seven":"7","eight":"8","nine":"9"
+}
+UNIT_HINTS = [
+    "tower","ground","approach","departure","center","centre","control","delivery",
+]
+ATC_VERBS = [
+    "cleared","maintain","climb","descend","contact","turn","reduce","increase",
+    "hold","expect","squawk","proceed","vector","resume","cross","expedite",
+]
+PILOT_VERBS = [
+    "request","ready","with you","checking in","leaving","climbing","descending",
+    "for departure","for taxi","landing","takeoff","on final","line up","wilco","roger",
+]
+ACK_ONLY = [
+    "roger","wilco","thank you","thanks","copied","affirm","negative","good day",
+    "morning","afternoon","evening"
+]
+JUNK_PAT = re.compile(r"^[\W_\.]+$")
+
+def normalize_text(s: str) -> str:
+    s = s.strip()
+    # common ellipses / filler purge
+    s = re.sub(r"[•·…]+", " ", s)
+    s = re.sub(r"\s+", " ", s)
+    return s
+
+def lower_letters_digits(s: str) -> str:
+    return re.sub(r"[^a-z0-9\s\-]", " ", s.lower())
+
+def expand_nato_numbers(t: str) -> str:
+    """Map NATO + number words so 'delta one two three' -> 'D 1 2 3'"""
+    out = []
+    for w in t.split():
+        if w in NATO: out.append(NATO[w])
+        elif w in NUM_WORDS: out.append(NUM_WORDS[w])
+        else: out.append(w)
+    return " ".join(out)
+
+def looks_like_callsign(t: str) -> Optional[str]:
+    """
+    Heuristic callsign detector (post NATO expansion):
+      - patterns like 'DAL 123', 'AAL 45', 'UAE 7', 'N123AB', etc.
+    """
+    t = t.upper()
+    # N-prefix GA (US), or 2–3 letters + 1–4 digits
+    m = re.search(r"\b([A-Z]{2,3}\s?\d{1,4}[A-Z]{0,2}|N\d{2,5}[A-Z]{0,2})\b", t)
+    return m.group(1).replace(" ", "") if m else None
+
+def contains_any(t: str, vocab: List[str]) -> bool:
+    t = " " + t.lower() + " "
+    return any(f" {w} " in t for w in vocab)
+
+def label_role(text_clean: str, callsign_present: bool) -> str:
+    """
+    Score-based role guess:
+      - If unit hint or strong ATC verbs appear ⇒ ATC
+      - If request/readback phrasing dominates ⇒ PILOT
+      - If ambiguous, use callsign presence and default to PILOT for short readbacks.
+    """
+    atc_score = 0
+    pilot_score = 0
+
+    if contains_any(text_clean, UNIT_HINTS): atc_score += 2
+    if contains_any(text_clean, ATC_VERBS): atc_score += 2
+    if contains_any(text_clean, PILOT_VERBS): pilot_score += 2
+
+    length = len(text_clean.split())
+    if length <= 3 and contains_any(text_clean, ["with you","checking in","departing"]):
+        pilot_score += 1
+    if length <= 3 and contains_any(text_clean, ["contact","maintain","climb","descend"]):
+        atc_score += 1
+
+    # short acknowledgments go to PILOT by default
+    if length <= 2 and contains_any(text_clean, ACK_ONLY):
+        pilot_score += 2
+
+    # callsign presence helps both; slight weight toward PILOT for readbacks
+    if callsign_present:
+        pilot_score += 1
+        atc_score += 1
+
+    if atc_score > pilot_score: return "ATC"
+    if pilot_score > atc_score: return "PILOT"
+    # tie-breakers
+    if length <= 3: return "PILOT"
+    return "ATC"
+
+def is_junk(text: str) -> bool:
+    t = text.strip()
+    if not t: return True
+    if JUNK_PAT.match(t): return True
+    # very short acknowledgments only?
+    low = t.lower()
+    if any(low == w for w in ["roger","wilco","thanks","thank you",".","..","..."]):
+        return True
+    # mostly dots
+    if set(low) <= set(". "): return True
+    # only 1 word & not alnum
+    tokens = re.findall(r"[A-Za-z0-9]+", t)
+    return len(tokens) == 0
+
+@dataclass
+class Utt:
+    idx: int
+    ts: float       # epoch seconds
+    text: str
+    text_clean: str
+    callsign: Optional[str]
+    role: str       # "ATC" or "PILOT"
+
+def preprocess_for_pairing(transcription_df: pd.DataFrame) -> List[Utt]:
+    """Convert transcription DataFrame to Utt objects for pairing analysis."""
+    out: List[Utt] = []
+
+    for i, row in transcription_df.iterrows():
+        raw = normalize_text(row.get("raw_transcription", ""))
+        if is_junk(raw):
+            continue
+
+        norm = lower_letters_digits(raw)
+        norm = expand_nato_numbers(norm)
+        cs = looks_like_callsign(norm)
+        role = label_role(norm, cs is not None)
+
+        try:
+            # Convert timestamp to epoch seconds
+            ts = row['timestamp_utc'].timestamp()
+        except Exception:
+            continue
+
+        out.append(Utt(idx=i, ts=ts, text=raw, text_clean=norm, callsign=cs, role=role))
+
+    # temporal sort
+    out.sort(key=lambda u: u.ts)
+    return out
+
+def pair_communications(utts: List[Utt], base_window: float = 12.0, grace: float = 2.0) -> Tuple[List[Dict], List[Utt]]:
+    """Pair ATC <-> Pilot communications and measure response times."""
+    pairs = []
+    used = set()
+    n = len(utts)
+
+    for i, u in enumerate(utts):
+        if i in used:
+            continue
+        # Skip pure acknowledgments for pairing
+        if any(f" {w} " in (" " + u.text_clean + " ") for w in ACK_ONLY):
+            continue
+
+        best = None
+        best_score = -1.0
+        for j in range(i+1, n):
+            v = utts[j]
+            if j in used:
+                continue
+            dt = v.ts - u.ts
+            if dt < 0:
+                continue
+            if dt > base_window + grace:
+                break
+
+            score = 0.0
+            # callsign exact match = strong score
+            if u.callsign and v.callsign and u.callsign == v.callsign:
+                score += 3.0
+            # role alternation is desired
+            if u.role != v.role:
+                score += 2.0
+            # control/request keyword cross
+            if contains_any(u.text_clean, ATC_VERBS) and contains_any(v.text_clean, PILOT_VERBS):
+                score += 1.0
+            if contains_any(u.text_clean, PILOT_VERBS) and contains_any(v.text_clean, ATC_VERBS):
+                score += 1.0
+            # tighter time gets a bonus
+            score += max(0.0, (base_window - dt) / base_window)
+
+            # Only consider if within base_window OR strong callsign+alternation in grace
+            # Require minimum score of 2.0 (at least role alternation)
+            if (dt <= base_window or (dt <= base_window + grace and score >= 4.0)) and score >= 2.0:
+                if score > best_score:
+                    best_score, best = score, (j, v, dt)
+
+        if best is not None:
+            j, v, dt = best
+            used.add(i); used.add(j)
+            d = "ATC_to_PILOT" if u.role == "ATC" and v.role == "PILOT" else "PILOT_to_ATC"
+            pairs.append({
+                "i": u.idx, "j": v.idx,
+                "t1_utc": u.ts, "t2_utc": v.ts,
+                "delta_sec": round(dt, 3),
+                "dir": d,
+                "callsign": u.callsign if u.callsign else (v.callsign or ""),
+                "u_role": u.role, "v_role": v.role,
+                "u_text": u.text, "v_text": v.text,
+            })
+
+    orphans = [utts[k] for k in range(n) if k not in used]
+    return pairs, orphans
+
+def calculate_response_time_stats(pairs: List[Dict]) -> Dict[str, Any]:
+    """Calculate response time statistics for ATC-to-Pilot and Pilot-to-ATC communications."""
+    atc_to_pilot = [p["delta_sec"] for p in pairs if p["dir"] == "ATC_to_PILOT"]
+    pilot_to_atc = [p["delta_sec"] for p in pairs if p["dir"] == "PILOT_to_ATC"]
+
+    def compute_stats(values: List[float]) -> Dict[str, float]:
+        if not values:
+            return {"count": 0, "avg_sec_trimmed": 0, "p50_sec": 0, "p90_sec": 0}
+        vals = sorted(values)
+        # 10% trimmed mean to avoid long gaps bias
+        k = int(0.1 * len(vals))
+        trimmed = vals[k: len(vals)-k] if len(vals) > 2*k+1 else vals
+        avg = sum(trimmed)/len(trimmed)
+        def pct(p):
+            if not vals: return 0.0
+            i = max(0, min(len(vals)-1, int(round((p/100.0)*(len(vals)-1)))))
+            return vals[i]
+        return {
+            "count": len(vals),
+            "avg_sec_trimmed": round(avg, 5),
+            "p50_sec": round(pct(50), 3),
+            "p90_sec": round(pct(90), 3),
+        }
+
+    stats = {
+        "ATC_to_PILOT": compute_stats(atc_to_pilot),
+        "PILOT_to_ATC": compute_stats(pilot_to_atc),
+        "total_pairs": len(pairs)
+    }
+
+    # Overall combined stats
+    all_times = atc_to_pilot + pilot_to_atc
+    if all_times:
+        combined_stats = compute_stats(all_times)
+        stats["combined"] = combined_stats
+
+    return stats
+
+@st.cache_data(ttl=60)
+def calculate_atc_pilot_response_times(transcription_df: Optional[pd.DataFrame]) -> Dict[str, Any]:
+    """Calculate ATC-to-Pilot and Pilot-to-ATC response time statistics."""
+    if transcription_df is None or transcription_df.empty:
+        return {
+            "ATC_to_PILOT": {"count": 0, "avg_sec_trimmed": 0, "p50_sec": 0, "p90_sec": 0},
+            "PILOT_to_ATC": {"count": 0, "avg_sec_trimmed": 0, "p50_sec": 0, "p90_sec": 0},
+            "total_pairs": 0
+        }
+
+    # Preprocess transcriptions
+    utts = preprocess_for_pairing(transcription_df)
+
+    # Pair communications with tighter window for aviation (pilots respond within 1-2 seconds)
+    pairs, orphans = pair_communications(utts, base_window=3.0, grace=1.0)
+
+    # Calculate statistics
+    stats = calculate_response_time_stats(pairs)
+
+    return stats
 
 @st.cache_data(ttl=3)  # Cache for 3 seconds - ensures fresh data with 10s auto-refresh
 def calculate_advanced_comm_stats(communication_df: Optional[pd.DataFrame]) -> Dict[str, Any]:
@@ -864,6 +1242,7 @@ def main():
     stats = calculate_stats(transcription_df, communication_df)
     advanced_stats = calculate_advanced_comm_stats(communication_df)
     airport_status = extract_airport_status(transcription_df)
+    response_times = calculate_atc_pilot_response_times(transcription_df)
     
     # Show last update time prominently
     last_update_str = stats['last_update'].strftime('%H:%M:%S')
@@ -974,8 +1353,8 @@ def main():
         "📊 Overview", 
         "📈 Daily Analytics", 
         "🏷️ Categories",
-        "📋 Detailed Stats (Working)", 
-        "🔍 Pattern Analysis (Working)"
+        "📋 Detailed Stats", 
+        "🔍 Pattern Analysis"
     ])
     
     with tab1:
@@ -1081,6 +1460,22 @@ def main():
                 # Split into commercial and GA
                 commercial_df = known_df[known_df['Type'] == 'Commercial'].copy()
                 ga_df = known_df[known_df['Type'] == 'General Aviation'].copy()
+
+                # Add registration name column for GA aircraft
+                def get_registration_name(airline_str):
+                    if 'General Aviation' in airline_str:
+                        match = re.search(r'\((N[0-9A-Z]+)\)', airline_str)
+                        if match:
+                            n_number = match.group(1)
+                            callsigns, phonetic_dict, nnumber_lookup = load_airline_configs()
+                            if nnumber_lookup and n_number in nnumber_lookup:
+                                owner = nnumber_lookup[n_number]
+                                if isinstance(owner, list):
+                                    owner = " ".join(owner)
+                                return str(owner)
+                    return None
+
+                ga_df['registration_name'] = ga_df['Airline/Flight'].apply(get_registration_name)
                 
                 # Summary metrics
                 col1, col2 = st.columns(2)
@@ -1124,18 +1519,21 @@ def main():
                     if not ga_df.empty:
                         col1, col2 = st.columns([1, 1])
                         with col1:
-                            display_ga = ga_df[['Airline/Flight', 'Count', 'Percentage']]
+                            display_ga = ga_df[['Airline/Flight', 'registration_name', 'Count', 'Percentage']].rename(
+                                columns={'Airline/Flight': 'Tail Number', 'registration_name': 'Registration Name'}
+                            )
                             st.dataframe(display_ga, use_container_width=True, hide_index=True, height=400)
                         with col2:
                             top_ga = ga_df.head(15)
                             fig_ga = px.bar(
-                                top_ga, 
-                                x='Airline/Flight', 
+                                top_ga,
+                                x='Airline/Flight',
                                 y='Count',
                                 title="Top 15 General Aviation Aircraft",
                                 labels={'Airline/Flight': 'Tail Number', 'Count': 'Communications'},
                                 color='Count',
-                                color_continuous_scale='Greens'
+                                color_continuous_scale='Greens',
+                                hover_data=['registration_name']
                             )
                             fig_ga.update_layout(height=400, xaxis_tickangle=45, showlegend=False)
                             st.plotly_chart(fig_ga, use_container_width=True)
@@ -1241,15 +1639,15 @@ def main():
         # Signal Level and Duration Statistics
         if communication_df is not None and not communication_df.empty:
             st.subheader("📡 Signal & Duration Analysis")
-            
+
             col1, col2 = st.columns(2)
-            
+
             with col1:
                 st.markdown("**📊 Signal Level (dBFS) Statistics**")
-                
+
                 if advanced_stats['signal_level_stats']:
                     signal_stats = advanced_stats['signal_level_stats']
-                    
+
                     signal_table = pd.DataFrame({
                         'Metric': ['Min', 'Median', 'Mean', 'Std Dev', 'Max'],
                         'Value (dBFS)': [
@@ -1261,7 +1659,7 @@ def main():
                         ]
                     })
                     st.dataframe(signal_table, use_container_width=True, hide_index=True)
-                    
+
                     # Quick metrics
                     col_a, col_b = st.columns(2)
                     with col_a:
@@ -1270,33 +1668,36 @@ def main():
                         st.metric("Signal Range", f"{signal_stats['max'] - signal_stats['min']:.2f} dB")
                 else:
                     st.info("No signal level data available.")
-            
+
             with col2:
-                st.markdown("**⏱️ Communication Duration (Working in Progress)**")
-                
-                if advanced_stats['duration_stats']:
-                    duration_stats = advanced_stats['duration_stats']
-                    
-                    duration_table = pd.DataFrame({
-                        'Metric': ['Min', 'Median', 'Mean', 'Std Dev', 'Max'],
-                        'Value (seconds)': [
-                            f"{duration_stats['min']:.2f}",
-                            f"{duration_stats['median']:.2f}",
-                            f"{duration_stats['mean']:.2f}",
-                            f"{duration_stats['std']:.2f}",
-                            f"{duration_stats['max']:.2f}"
+                st.markdown("**⏱️ ATC-Pilot Response Times**")
+
+                if response_times and response_times.get('total_pairs', 0) > 0:
+                    st.caption("💡 Using 3-second pairing window for aviation communications (pilots typically respond within 1-2 seconds)")
+
+                    # Communication duration table showing ATC-to-Pilot and Pilot-to-ATC only
+                    response_table = pd.DataFrame({
+                        'Direction': ['ATC → Pilot', 'Pilot → ATC'],
+                        'Pairs': [
+                            response_times['ATC_to_PILOT']['count'],
+                            response_times['PILOT_to_ATC']['count']
+                        ],
+                        'Avg Response (sec)': [
+                            f"{response_times['ATC_to_PILOT']['avg_sec_trimmed']:.1f}",
+                            f"{response_times['PILOT_to_ATC']['avg_sec_trimmed']:.1f}"
+                        ],
+                        'Median (sec)': [
+                            f"{response_times['ATC_to_PILOT']['p50_sec']:.1f}",
+                            f"{response_times['PILOT_to_ATC']['p50_sec']:.1f}"
+                        ],
+                        '90th %ile (sec)': [
+                            f"{response_times['ATC_to_PILOT']['p90_sec']:.1f}",
+                            f"{response_times['PILOT_to_ATC']['p90_sec']:.1f}"
                         ]
                     })
-                    st.dataframe(duration_table, use_container_width=True, hide_index=True)
-                    
-                    # Quick metrics
-                    col_a, col_b = st.columns(2)
-                    with col_a:
-                        st.metric("Avg Interval", f"{duration_stats['mean']:.1f} sec")
-                    with col_b:
-                        st.metric("Median Interval", f"{duration_stats['median']:.1f} sec")
+                    st.dataframe(response_table, use_container_width=True, hide_index=True)
                 else:
-                    st.info("No duration data available.")
+                    st.info("No response time data available yet. Need more transcription pairs to analyze.")
             
             st.markdown("---")
             
