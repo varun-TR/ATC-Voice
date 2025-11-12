@@ -1519,7 +1519,7 @@ def main():
                     if not ga_df.empty:
                         col1, col2 = st.columns([1, 1])
                         with col1:
-                            display_ga = ga_df[['Airline/Flight', 'registration_name', 'Count', 'Percentage']].rename(
+                            display_ga = ga_df[['Airline/Flight', 'registration_name', 'Count']].rename(
                                 columns={'Airline/Flight': 'Tail Number', 'registration_name': 'Registration Name'}
                             )
                             st.dataframe(display_ga, use_container_width=True, hide_index=True, height=400)
