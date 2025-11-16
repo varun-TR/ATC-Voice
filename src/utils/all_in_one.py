@@ -51,7 +51,8 @@ class SlidingWindowAudioSplitter:
     def add_to_buffer(self, audio_data, timestamp):
         with self.buffer_lock:
             self.audio_buffer.append((audio_data, timestamp))
-            max_buffer_items = int((self.chunk_duration + 10) * 10)
+            # Limit buffer to only what's needed for chunks + small margin
+            max_buffer_items = int((self.chunk_duration + 5) * 8)  # Reduced from 10*10
             while len(self.audio_buffer) > max_buffer_items:
                 self.audio_buffer.popleft()
 
@@ -255,17 +256,30 @@ class TranscriptionEngine:
         print("🤖 Loading ATC-specialized Whisper model (jlvdoorn/whisper-large-v3-atco2-asr)...")
         # Use GPU if available and not already in use, otherwise fallback to CPU
         import torch
+        import gc
+        
+        # Force garbage collection before loading model
+        gc.collect()
+        
         device = 0 if torch.cuda.is_available() and torch.cuda.memory_allocated() == 0 else -1
         device_name = "GPU" if device == 0 else "CPU"
         print(f"🖥️  Using device: {device_name}")
         
+        # Use more memory-efficient settings
         self.pipeline = pipeline(
             "automatic-speech-recognition",
             model="jlvdoorn/whisper-large-v3-atco2-asr",
             device=device,
-            dtype=torch.float16 if device == 0 else torch.float32  # Use dtype instead of torch_dtype
+            torch_dtype=torch.float16 if device == 0 else torch.float32,
+            model_kwargs={"use_safetensors": True} if device == 0 else {}
         )
         print("✅ ATC-specialized Whisper model loaded!")
+        
+        # Clear memory after loading
+        gc.collect()
+        if device == 0:
+            torch.cuda.empty_cache()
+        
         self._load_results()
         
     def _load_results(self):
@@ -314,6 +328,8 @@ class TranscriptionEngine:
     
     def _transcribe_long_audio(self, audio_path: str, chunk_seconds: int = 30):
         """Transcribe long audio by splitting it into chunks to avoid Whisper's 30s limit."""
+        import gc
+        
         y, sr = librosa.load(audio_path, sr=None)
         chunk_size = sr * chunk_seconds
         transcription = ""
@@ -332,14 +348,22 @@ class TranscriptionEngine:
                 )
                 transcription += result['text'] + " "
             finally:
-                # Clean up temporary file
+                # Clean up temporary file and chunk data
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
+                del chunk
+                gc.collect()
+        
+        # Clean up audio array
+        del y
+        gc.collect()
         
         return transcription.strip()
     
     def _transcribe_array(self, y: np.ndarray):
         """Transcribe audio array using the pipeline."""
+        import gc
+        
         # Save to temporary file for pipeline processing
         temp_path = "temp_audio.wav"
         sf.write(temp_path, y, self.sr)
@@ -357,6 +381,8 @@ class TranscriptionEngine:
             # Clean up temporary file
             if os.path.exists(temp_path):
                 os.remove(temp_path)
+            # Force garbage collection after transcription
+            gc.collect()
     
     def _save_results(self):
         # Save only to transcripts.json for ATC model results
@@ -365,6 +391,8 @@ class TranscriptionEngine:
             json.dump(self.results, f, indent=2, ensure_ascii=False)
     
     def transcribe_file(self, filepath: str):
+        import gc
+        
         with self.lock:
             if filepath in self.processed_files:
                 print(f"⏭️  Already processed: {os.path.basename(filepath)}")
@@ -380,7 +408,15 @@ class TranscriptionEngine:
                 audio = self._load_audio(filepath)
                 raw_duration = len(audio) / self.sr
                 
-                chunk_number = len(self.results['items']) + 1
+                # Clear audio from memory immediately
+                del audio
+                gc.collect()
+                
+                # Get the highest existing chunk number and continue from there
+                existing_chunks = [item.get('chunk_number', 0) for item in self.results['items']]
+                max_chunk = max(existing_chunks) if existing_chunks else 0
+                chunk_number = max_chunk + 1
+                
                 item = {
                     "chunk_number": chunk_number,
                     "audio_file_raw": filepath,
@@ -403,6 +439,9 @@ class TranscriptionEngine:
                 
             except Exception as e:
                 print(f"❌ Error transcribing {os.path.basename(filepath)}: {e}")
+            finally:
+                # Force garbage collection after each transcription
+                gc.collect()
 
 
 # ============================================================================

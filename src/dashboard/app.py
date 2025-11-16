@@ -26,7 +26,8 @@ st.set_page_config(
 
 # File paths
 BASE_DIR = Path(".")
-TRANSCRIPTIONS_FILE = BASE_DIR / "src" / "data" / "logs" / "transcripts" / "categorized_transcription_results.json"
+TRANSCRIPTIONS_FILE = BASE_DIR / "src" / "data" / "logs" / "transcripts" / "cleaned_transcripts.json"  # Main cleaned transcripts file
+TRANSCRIPTIONS_MAIN_FILE = BASE_DIR / "src" / "data" / "logs" / "transcripts" / "cleaned_transcripts.json"  # Main file for recent data
 COMMUNICATIONS_FILE = BASE_DIR / "src" / "data" / "logs" / "atc_communications.txt"
 AIRLINE_CALLSIGN_FILE = BASE_DIR / "config" / "airline_callsign (2).json"
 PHONETIC_ALPHABET_FILE = BASE_DIR / "config" / "phonetic_alphabet (1).json"
@@ -223,6 +224,64 @@ def detect_callsign(text: str,
             tail_tokens = []
 
     return "Unknown"
+
+@st.cache_data(ttl=3)  # Cache for 3 seconds - ensures fresh data
+def load_recent_transcriptions(_refresh_key: int = 0) -> Optional[pd.DataFrame]:
+    """Load recent transcriptions from the main file (not backup). _refresh_key forces cache invalidation."""
+    try:
+        if not TRANSCRIPTIONS_MAIN_FILE.exists():
+            return None
+        
+        with open(TRANSCRIPTIONS_MAIN_FILE, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Handle corrupted JSON
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError as e:
+            # Attempt to salvage partial JSON
+            try:
+                items_key_idx = content.find('"items"')
+                arr_start = content.find('[', items_key_idx)
+                if items_key_idx != -1 and arr_start != -1:
+                    cutoff = max(0, e.pos - 1)
+                    up_to_err = content[:cutoff]
+                    last_obj_end = up_to_err.rfind('}')
+                    if last_obj_end != -1 and last_obj_end > arr_start:
+                        prefix = content[:arr_start + 1]
+                        items_part = content[arr_start + 1:last_obj_end + 1]
+                        items_part = items_part.rstrip()
+                        if items_part.endswith(','):
+                            items_part = items_part[:-1]
+                        repaired = prefix + items_part + "\n  ]\n}"
+                        data = json.loads(repaired)
+                    else:
+                        return None
+                else:
+                    return None
+            except Exception:
+                return None
+        
+        if not data or 'items' not in data:
+            return None
+        
+        items = data['items']
+        if not items:
+            return None
+        
+        df = pd.DataFrame(items)
+        
+        # Parse timestamp
+        if 'timestamp_utc' in df.columns:
+            df['timestamp_utc'] = pd.to_datetime(df['timestamp_utc'], errors='coerce')
+            df['date'] = df['timestamp_utc'].dt.date
+            df['hour'] = df['timestamp_utc'].dt.hour
+        
+        return df
+        
+    except Exception as e:
+        st.error(f"Error loading recent transcriptions: {str(e)}")
+        return None
 
 @st.cache_data(ttl=3)  # Cache for 3 seconds - ensures fresh data with 10s auto-refresh
 def load_transcription_data(_refresh_key: int = 0) -> Optional[pd.DataFrame]:
@@ -1560,41 +1619,55 @@ def main():
             else:
                 st.info("No known airline data available yet. All entries are marked as 'Unknown'.")
         
-        # Recent transcriptions table
-        if transcription_df is not None and not transcription_df.empty:
-            st.subheader("📋 Recent Transcriptions")
-            
-            # Sort by timestamp and get the most recent 5
-            sorted_df = transcription_df.sort_values('timestamp_utc', ascending=False)
+        # Recent transcriptions table - Load from MAIN file (live data)
+        st.subheader("📋 Recent Transcriptions")
+        
+        # Load recent transcriptions from the main file
+        recent_transcriptions_df = load_recent_transcriptions(_refresh_key=refresh_key)
+        
+        if recent_transcriptions_df is not None and not recent_transcriptions_df.empty:
+            # Sort by timestamp and get the most recent entries (regardless of date)
+            sorted_df = recent_transcriptions_df.sort_values('timestamp_utc', ascending=False)
             
             # Select columns to display
             columns_to_show = ['timestamp_utc', 'airline', 'category', 'raw_transcription']
             recent_df = sorted_df.head(5)[columns_to_show].copy()
             
-            # Clean the transcription text to remove copyright notices
-            recent_df['raw_transcription'] = recent_df['raw_transcription'].apply(clean_transcription_text)
-            
-            # Format timestamp to be more readable
-            recent_df['timestamp_utc'] = recent_df['timestamp_utc'].dt.strftime('%Y-%m-%d %H:%M:%S')
-            
-            # Rename columns for display
-            recent_df.columns = ['Timestamp', 'Airline/Flight', 'Category', 'Communication']
-            
-            # Style the dataframe
-            st.dataframe(
-                recent_df, 
-                use_container_width=True, 
-                hide_index=True,
-                column_config={
-                    "Timestamp": st.column_config.TextColumn("Timestamp", width="medium"),
-                    "Airline/Flight": st.column_config.TextColumn("Airline/Flight", width="medium"),
-                    "Category": st.column_config.TextColumn("Category", width="medium"),
-                    "Communication": st.column_config.TextColumn("Communication", width="large"),
-                }
-            )
-            
-            # Show total count
-            st.caption(f"Showing latest 5 of {len(transcription_df):,} total transcriptions")
+            if not recent_df.empty:
+                # Clean the transcription text to remove copyright notices
+                recent_df['raw_transcription'] = recent_df['raw_transcription'].apply(clean_transcription_text)
+                
+                # Format timestamp to show date and time
+                recent_df['date_time'] = pd.to_datetime(recent_df['timestamp_utc']).dt.strftime('%Y-%m-%d %H:%M:%S')
+                
+                # Drop the original timestamp_utc column
+                recent_df = recent_df.drop('timestamp_utc', axis=1)
+                
+                # Reorder columns
+                recent_df = recent_df[['date_time', 'airline', 'category', 'raw_transcription']]
+                
+                # Rename columns for display
+                recent_df.columns = ['Date & Time', 'Airline/Flight', 'Category', 'Communication']
+                
+                # Style the dataframe
+                st.dataframe(
+                    recent_df, 
+                    use_container_width=True, 
+                    hide_index=True,
+                    column_config={
+                        "Date & Time": st.column_config.TextColumn("Date & Time", width="medium"),
+                        "Airline/Flight": st.column_config.TextColumn("Airline/Flight", width="medium"),
+                        "Category": st.column_config.TextColumn("Category", width="medium"),
+                        "Communication": st.column_config.TextColumn("Communication", width="large"),
+                    }
+                )
+                
+                # Show count
+                st.caption(f"📅 Showing latest {len(recent_df)} transcriptions")
+            else:
+                st.info("📋 No recent transcription data available")
+        else:
+            st.info("📋 No recent transcription data available")
     
     with tab2:
         st.header("Daily Analytics")

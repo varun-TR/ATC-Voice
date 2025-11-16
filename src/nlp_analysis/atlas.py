@@ -1,919 +1,541 @@
+#!/usr/bin/env python3
+"""
+Automatic cleaner for transcripts.json
+This script continuously monitors and cleans the JSON file to:
+1. Remove entries where "thank you", "thanks", or "thank" is a standalone word or repeated
+2. Remove spam "subscribe" messages (e.g., "Thank you for watching! Please subscribe...")
+3. Remove © symbols and any text following them
+4. Remove repeated patterns (e.g., '? ? ? ?', 'uh uh uh')
+5. Categorize communications and detect airline callsigns (like atlas.py)
+6. Flag duplicates
+7. Keep the file clean and neat at all times
+"""
+
 import json
 import re
-import sys
 import time
-import os
-import string
+import sys
 from pathlib import Path
 from typing import Dict, List, Any, Tuple
-from difflib import SequenceMatcher
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+# Import functions from postprocess.py (which has the categorization functions)
+from postprocess import (
+    categorize_communication,
+    detect_callsign,
+    flag_duplicates,
+    load_unified_config,
+    preprocess_transcript
+)
 
-# ----------------------------- Preprocessing ----------------------------- #
-def preprocess_transcript(text: str) -> str:
-    """Normalize transcript for consistent matching."""
-    if not text or text.strip() == "":
-        return ""
-    
-    text = text.lower()
-    
-    # Replace weird punctuation (e.g. \u3002 or ideographic full stop)
-    text = text.replace("\u3002", ".").replace("。", ".")
-    
-    # Convert spoken numbers to digits
-    text = convert_spoken_numbers(text)
-    
-    # Remove repeated single words
-    text = re.sub(r'\b(\w+)( \1\b)+', r'\1', text)
-    
-    # Remove sequences of dots like ". . . . . ." → "."
-    text = re.sub(r'(\.\s*){2,}', '. ', text)
-    
-    # Remove repeated short phrases like "thank you. thank you."
-    text = re.sub(r'(\b[\w\s]{2,20}[.!?])(\s*\1){2,}', r'\1', text)
-    
-    # Remove excessive "thank you" repetition specifically
-    text = re.sub(r'(thank you[.!?\s]*){2,}', 'thank you.', text)
-    
-    # Remove repeated numeric patterns (like "1 2 000 9" repeated)
-    text = re.sub(r'(\b[\d\s]{2,}\b)( \1)+', r'\1', text)
-    
-    # Remove unwanted copyright or annotation text
-    text = re.sub(r"©.*?(transcript|TV).*", "", text, flags=re.IGNORECASE)
-    
-    # Remove non-printable characters
-    text = re.sub(r'[^\x20-\x7E]+', ' ', text)
-    
-    # Normalize extra spaces and punctuation spacing
-    text = re.sub(r"\s+", " ", text)
-    text = re.sub(r"\s*([.,!?])\s*", r"\1 ", text)
-    text = text.strip()
-    
-    return text
+# Load phonetic alphabet function (may not exist in postprocess.py)
+try:
+    from postprocess import load_phonetic_alphabet
+except ImportError:
+    def load_phonetic_alphabet(phonetic_path: Path) -> dict:
+        """Load phonetic alphabet mapping."""
+        with open(phonetic_path, "r", encoding="utf-8") as f:
+            return json.load(f)
 
 
-def convert_spoken_numbers(text: str) -> str:
-    """Convert spoken numbers to digits for better ATC communication processing."""
-    # Dictionary mapping spoken numbers to digits
-    number_map = {
-        'zero': '0', 'oh': '0', 'o': '0',
-        'one': '1', 'won': '1',
-        'two': '2', 'too': '2',
-        'three': '3', 'tree': '3',
-        'four': '4', 'fore': '4',
-        'five': '5', 'fife': '5',
-        'six': '6',
-        'seven': '7',
-        'eight': '8', 'ate': '8',
-        'nine': '9', 'niner': '9',
-        'ten': '10',
-        'eleven': '11',
-        'twelve': '12',
-        'thirteen': '13',
-        'fourteen': '14',
-        'fifteen': '15',
-        'sixteen': '16',
-        'seventeen': '17',
-        'eighteen': '18',
-        'nineteen': '19',
-        'twenty': '20',
-        'thirty': '30',
-        'forty': '40',
-        'fifty': '50',
-        'sixty': '60',
-        'seventy': '70',
-        'eighty': '80',
-        'ninety': '90',
-        'hundred': '00',
-        'thousand': '000'
-    }
+class TranscriptionCleaner(FileSystemEventHandler):
+    """Automatically clean the transcription file."""
     
-    # Words that should NOT be converted even if they sound like numbers
-    # These are common ATC words that should remain as words
-    preserve_words = {
-        'to', 'for', 'at', 'on', 'in', 'of', 'the', 'a', 'an', 'and', 'or', 'but',
-        'with', 'by', 'from', 'up', 'down', 'out', 'off', 'over', 'under', 'through',
-        'contact', 'switch', 'change', 'monitor', 'handoff', 'go', 'call', 'report',
-        'cleared', 'cleared', 'maintain', 'expect', 'cross', 'level', 'altitude',
-        'heading', 'direct', 'vector', 'course', 'runway', 'frequency', 'tower',
-        'approach', 'departure', 'ground', 'clearance', 'takeoff', 'landing',
-        'arrival', 'final', 'weather', 'wind', 'visibility', 'ceiling', 'clouds',
-        'traffic', 'aircraft', 'caution', 'wake', 'turbulence', 'heavy', 'light',
-        'emergency', 'mayday', 'pan', 'medical', 'fuel', 'engine', 'fire', 'failure',
-        'unable', 'comply', 'declare', 'lost', 'communications', 'radio', 'hydraulic',
-        'descent', 'landing', 'situation', 'continue', 'temperature', 'dew', 'point',
-        'pressure', 'altimeter', 'current', 'conditions', 'direction', 'speed',
-        'precipitation', 'alert', 'conflict', 'information', 'line', 'wait', 'short',
-        'centerline', 'closed', 'lights', 'condition', 'use', 'in', 'use'
-    }
-    
-    # Split text into words
-    words = text.split()
-    converted_words = []
-    
-    for word in words:
-        # Clean word of punctuation for matching
-        clean_word = re.sub(r'[^a-z]', '', word.lower())
-        
-        # Only convert if it's in the number map AND not in preserve words
-        if clean_word in number_map and clean_word not in preserve_words:
-            # Replace with digit(s)
-            converted_words.append(number_map[clean_word])
-        else:
-            # Keep original word
-            converted_words.append(word)
-    
-    return ' '.join(converted_words)
-
-
-# ----------------------------- Utilities ----------------------------- #
-def similarity(a: str, b: str) -> float:
-    """Return similarity ratio between two strings."""
-    return SequenceMatcher(None, a, b).ratio()
-
-
-def generate_ngrams(words: List[str], n: int) -> List[str]:
-    """Return contiguous n-word phrases."""
-    if n <= 0 or n > len(words):
-        return []
-    return [" ".join(words[i:i + n]) for i in range(len(words) - n + 1)]
-
-
-# ------------------------------ Categorizer ------------------------------ #
-def load_unified_config(config_path: Path) -> Tuple[dict, dict]:
-    """Load unified configuration file with categories, keywords, and callsigns."""
-    with open(config_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    
-    # Extract category keywords
-    category_keywords = {}
-    for category_name, category_data in data.items():
-        keywords = category_data.get("keywords", [])
-        related_patterns = category_data.get("related_patterns", [])
-        
-        # Combine keywords and related patterns
-        all_keywords = keywords + related_patterns
-        kws_lower = [kw.lower() for kw in all_keywords]
-        category_keywords[category_name] = sorted(kws_lower, key=lambda s: len(s.split()), reverse=True)
-    
-    # Extract airline callsigns from the first category (they're the same in all)
-    # Flatten into {alias_lower: airline_name}
-    callsigns = {}
-    for category_name, category_data in data.items():
-        airline_callsigns = category_data.get("airline_callsigns", {})
-        for airline, aliases in airline_callsigns.items():
-            for alias in aliases:
-                callsigns[alias.lower()] = airline
-        break  # Only need to process once since all categories have the same callsigns
-    
-    return category_keywords, callsigns
-
-
-def load_dictionaries(dict_path: Path) -> dict:
-    """Load and normalize category keywords from JSON file."""
-    with open(dict_path, "r", encoding="utf-8") as f:
-        category_keywords = json.load(f)
-
-    normalized = {}
-    for cat, kws in category_keywords.items():
-        kws_lower = [kw.lower() for kw in kws]
-        normalized[cat] = sorted(kws_lower, key=lambda s: len(s.split()), reverse=True)
-
-    return normalized
-
-
-def load_callsigns(callsign_path: Path) -> dict:
-    """Load airline callsigns JSON where each airline has multiple aliases."""
-    with open(callsign_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    # Flatten into {alias_lower: airline_name}
-    callsigns = {}
-    for airline, aliases in data.items():
-        for alias in aliases:
-            callsigns[alias.lower()] = airline
-    return callsigns
-
-
-def load_phonetic_alphabet(phonetic_path: Path) -> dict:
-    """Load phonetic alphabet mapping."""
-    with open(phonetic_path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def words_to_digits(word: str) -> str:
-    """Convert spelled numbers to digits."""
-    mapping = {
-        "zero": "0", "one": "1", "two": "2", "three": "3", "four": "4",
-        "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9",
-        "niner": "9", "fife": "5"
-    }
-    return mapping.get(word, word)
-
-
-def normalize_numbers(tokens: List[str]) -> List[str]:
-    """Convert spelled numbers in list of tokens to digits."""
-    return [words_to_digits(tok) for tok in tokens]
-
-
-def detect_callsign(text: str, callsigns: dict, phonetic_dict: dict = None) -> str:
-    """Return the airline name or GA tail number if detected in transcript."""
-    if not text:
-        return "Unknown"
-    
-    t = preprocess_transcript(text)
-    text_upper = text.upper()
-    
-    # --- General Aviation Tail Number Detection (check first) ---
-    # Check for direct N-numbers (e.g., N5194, N2905X)
-    direct_match = re.search(r"\bN\d{1,5}[A-Z]{0,2}\b", text_upper)
-    if direct_match:
-        return f"General Aviation ({direct_match.group(0)})"
-    
-    # Decode phonetic GA sequences like "November six seven alpha foxtrot"
-    if phonetic_dict:
-        # Look for "november" followed by up to 7 tokens (max tail: 5 digits + 2 letters)
-        ga_match = re.search(r"\bnovember(?:\s+[\w]+){1,7}\b", t)
-        if ga_match:
-            phrase = ga_match.group(0)
-            tokens = re.split(r"[\s\-]+", phrase.strip())
-            tokens = normalize_numbers(tokens)
-            
-            tail = "N"
-            digit_count = 0
-            letter_count = 0
-            
-            for token in tokens[1:]:  # Skip "november"
-                if token in phonetic_dict:
-                    if digit_count == 0:  # Letters before digits are invalid
-                        break
-                    if letter_count >= 2:  # Max 2 letters
-                        break
-                    tail += phonetic_dict[token]
-                    letter_count += 1
-                elif token.isdigit():
-                    if letter_count > 0:  # No digits after letters
-                        break
-                    # Can be multi-digit like "1234"
-                    new_digit_count = digit_count + len(token)
-                    if new_digit_count > 5:  # Max 5 digits total
-                        break
-                    tail += token
-                    digit_count = new_digit_count
-                elif len(token) == 1 and token.isalpha():
-                    if digit_count == 0:  # Letters before digits are invalid
-                        break
-                    if letter_count >= 2:  # Max 2 letters
-                        break
-                    tail += token.upper()
-                    letter_count += 1
-                else:
-                    # Stop at invalid token
-                    break
-            
-            tail = re.sub(r"[^A-Z0-9]", "", tail)
-            
-            # FAA format validation: N + 1–5 digits + 0–2 letters
-            if re.match(r"^N\d{1,5}[A-Z]{0,2}$", tail) and digit_count >= 1:
-                return f"General Aviation ({tail})"
-    
-    # --- Commercial Airline Callsign Detection (after GA check) ---
-    # Try exact matches with word boundaries
-    for alias, airline in callsigns.items():
-        if re.search(rf"\b{re.escape(alias.lower())}\b", t):
-            # Handle ambiguous "delta" case
-            if alias.lower() == "delta":
-                # Skip if it's part of a GA phrase
-                if re.search(r"\bnovember\b", t):
-                    continue
-                # If used with phonetic patterns, treat as GA
-                if re.search(r"\bdelta (alpha|bravo|charlie|echo|foxtrot|golf|hotel|india|juliet|kilo|lima|mike|oscar|papa|quebec|romeo|sierra|tango|uniform|victor|whiskey|xray|yankee|zulu)\b", t):
-                    continue
-                # If followed by valid flight number, it's an airline
-                if re.search(r"\bdelta (\d+|one|two|three|four|five|six|seven|eight|nine|zero)\b", t):
-                    return airline
-                continue
-            
-            return airline
-    
-    # Try substring matches for callsigns
-    for alias, airline in callsigns.items():
-        if alias.lower() in t:
-            return airline
-    
-    return "Unknown"
-
-
-def categorize_communication(text: str, category_keywords: dict, fuzzy_threshold: float = 0.75) -> str:
-    """Return communication category using exact keyword matching (first match wins)."""
-    if not text or text.strip() == "":
-        return "General Communications"
-
-    # Normalize transcript: lowercase and remove punctuation
-    text_lower = preprocess_transcript(text).lower()
-    # Remove punctuation for matching
-    text_clean = text_lower.translate(str.maketrans('', '', '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'))
-
-    # Helper: stricter emergency gating
-    def _is_true_emergency(t: str) -> bool:
-        # Strong positive patterns
-        positive_patterns = [
-            r"\bmayday\b",
-            r"\bpan(?:\s+pan){1,2}\b",
-            r"\bdeclaring (an )?emergency\b",
-            r"\bmedical emergency\b",
-            r"\bfuel emergency\b",
-            r"\bsquawk(?:ing)?\s*7700\b",
-            r"\bengine (?:failure|out)\b",
-            r"\bsmoke (?:in|on)\b",
-            r"\bfire (?:on board|in (?:cabin|cockpit))\b",
-            r"\bpriority (?:landing|handling)\b",
-            r"\bunabl[e]? to maintain altitude\b",
-            r"\blost communications\b"
-        ]
-        for pat in positive_patterns:
-            if re.search(pat, t):
-                return True
-        # If only the token 'emergency' appears, require supporting context
-        if re.search(r"\bemergency\b", t):
-            # Likely misrecognition cases: 'emergency' followed by numbers/flight-like tokens
-            if re.search(r"\bemergency\s+[a-zA-Z]*\d+", t):
-                return False
-            # Greetings + 'emergency' without declarative verbs
-            if re.search(r"\b(good (afternoon|morning|evening)\s+)?emergency\b", t) and not re.search(r"\b(declare|declaring|mayday|pan)\b", t):
-                return False
-            # Require at least one supporting keyword if 'emergency' is present
-            if not re.search(r"\b(declare|declaring|request|need|medical|fuel|priority|mayday|pan|7700|squawk)\b", t):
-                return False
-            return True
-        return False
-
-    # Separate "Miscellaneous" from other categories to check it last
-    other_categories = {k: v for k, v in category_keywords.items() if k.lower() != "miscellaneous"}
-    misc_keywords = category_keywords.get("Miscellaneous", [])
-
-    # Check specific categories first (not Miscellaneous)
-    for category, keywords in other_categories.items():
-        for keyword in keywords:
-            # Clean keyword: lowercase and remove punctuation
-            kw_clean = keyword.lower().translate(str.maketrans('', '', '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'))
-
-            # Check if keyword appears in text
-            if kw_clean in text_clean:
-                # Harden emergency detection: avoid false positives on lone 'emergency'
-                if category.lower() == "emergency declarations":
-                    if not _is_true_emergency(text_lower):
-                        continue  # skip emergency category if not strongly supported
-                return category
-
-    # Then check Miscellaneous category if it exists
-    if misc_keywords:
-        for keyword in misc_keywords:
-            kw_clean = keyword.lower().translate(str.maketrans('', '', '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'))
-            if kw_clean in text_clean:
-                return "Miscellaneous"
-
-    # Fallback if no keyword matches
-    return "General Communications"
-
-
-def _is_semantically_similar(keyword: str, phrase: str) -> bool:
-    """Check if two phrases are semantically similar, not just character-wise similar."""
-    kw_words = keyword.split()
-    ph_words = phrase.split()
-    
-    # If both phrases contain numbers, they should be very similar to match
-    kw_has_numbers = any(word.isdigit() for word in kw_words)
-    ph_has_numbers = any(word.isdigit() for word in ph_words)
-    
-    if kw_has_numbers and ph_has_numbers:
-        # For phrases with numbers, require exact word matches for numbers
-        kw_numbers = [word for word in kw_words if word.isdigit()]
-        ph_numbers = [word for word in ph_words if word.isdigit()]
-        if kw_numbers != ph_numbers:
-            return False
-    
-    # Check if the alphabetic words are similar
-    kw_alpha = [word for word in kw_words if word.isalpha()]
-    ph_alpha = [word for word in ph_words if word.isalpha()]
-    
-    if len(kw_alpha) != len(ph_alpha):
-        return False
-    
-    # Check if each alphabetic word is similar
-    for kw_word, ph_word in zip(kw_alpha, ph_alpha):
-        if similarity(kw_word, ph_word) < 0.8:
-            return False
-    
-    return True
-
-
-# ------------------------------ Transcription Filtering ------------------------------ #
-def is_valid_transcription(text: str) -> bool:
-    """
-    Check if a transcription is valid and should be included.
-    Returns False if the text is:
-    - Only dots/periods (Western: . or Japanese: 。)
-    - Only "thank you" variations
-    - Contains excessive repetitive dots and periods
-    - Contains excessive Chinese/Japanese characters (often transcription artifacts)
-    - Empty or whitespace only
-    """
-    if not text or not text.strip():
-        return False
-    
-    # Clean the text - remove copyright notices
-    if '©' in text:
-        text = text.split('©')[0]
-    
-    text = text.strip()
-    
-    # Empty after cleaning
-    if not text:
-        return False
-    
-    # Pattern 1: Check for excessive dots/periods pattern (e.g., ". . . . ." or "。 。 。")
-    # Remove spaces and check if mostly dots
-    text_no_space = text.replace(' ', '').replace('\n', '').replace('\t', '')
-    
-    # Check if only dots/periods (both Western and Japanese)
-    if all(c in '.。' for c in text_no_space):
-        return False
-    
-    # Check if mostly dots (more than 70% dots/periods)
-    dot_count = text_no_space.count('.') + text_no_space.count('。')
-    if len(text_no_space) > 0 and dot_count > len(text_no_space) * 0.7:
-        return False
-    
-    # Pattern 2: Check for repetitive dot patterns with spaces (e.g., ". . . . . . .")
-    # Count sequences of dots separated by spaces
-    dot_pattern = re.compile(r'[\.\。]\s*')
-    dot_matches = dot_pattern.findall(text)
-    if len(dot_matches) > 20:  # More than 20 dot sequences indicates invalid transcription
-        return False
-    
-    # Pattern 3: Check if only "thank you" variations (case insensitive)
-    text_lower = text.lower()
-    # Remove punctuation for word analysis
-    text_for_words = re.sub(r'[^\w\s]', '', text_lower)
-    text_words = text_for_words.split()
-    
-    # Check if all words are only "thank", "you", "very", "much"
-    if text_words and all(word in ['thank', 'you', 'very', 'much'] for word in text_words):
-        return False
-    
-    # Pattern 4: Check for ANY occurrence of "thank you", "thanks", or standalone "thank"
-    # Remove any transcription containing these gratitude expressions anywhere in the text
-    if 'thank you' in text_lower or 'thanks' in text_lower or re.search(r'\bthank\b', text_lower):
-        return False
-    
-    # Pattern 5: Check for excessive Chinese/Japanese characters (transcription artifacts)
-    chinese_chars = sum(1 for c in text if '\u4e00' <= c <= '\u9fff' or '\u3040' <= c <= '\u309f' or '\u30a0' <= c <= '\u30ff')
-    if chinese_chars > len(text) * 0.5:  # More than 50% Chinese/Japanese characters
-        return False
-    
-    # Pattern 6: Check for lines that are almost entirely dots with a "thank you" at the end
-    # Example: ". . . . . . . . . . 。 。 。 。 。 ... Thank you."
-    if dot_count > 50 and len(text_words) <= 3:  # Many dots but very few actual words
-        return False
-    
-    return True
-
-
-# ------------------------------ Duplicate Detection ------------------------------ #
-def flag_duplicates(items: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], int]:
-    """Flag duplicate/redundant raw transcriptions."""
-    seen = {}
-    duplicate_count = 0
-
-    for item in items:
-        raw_text = item.get("raw_transcription", "")
-        normalized = preprocess_transcript(raw_text)
-
-        if normalized in seen:
-            item["duplicate_flag"] = True
-            seen[normalized]["duplicate_flag"] = True  # Mark original too
-            duplicate_count += 1
-        else:
-            item["duplicate_flag"] = False
-            seen[normalized] = item
-
-    return items, duplicate_count
-
-
-# ------------------------------ Path Setup ------------------------------ #
-def setup_paths():
-    """Setup directory paths for VM environment."""
-    # Base directory structure - use absolute path
-    base_dir = Path("/home/atc_voice/ATC-Voice")
-    
-    # Dictionary files location
-    config_dir = base_dir / "config"
-    config_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Input/Output paths - corrected paths
-    input_dir = base_dir / "src" / "data" / "logs" / "transcripts"
-    output_dir = base_dir / "src" / "data" / "logs" / "transcripts"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    paths = {
-        "unified_config": config_dir / "final_aviation_ultimate_with_emergency.json",
-        "category_dict": config_dir / "category_dict.json",
-        "callsign": config_dir / "airline_callsign.json",
-        "phonetic": config_dir / "phonetic_alphabet.json",
-        "input": input_dir / "transcripts.json",
-        "output": output_dir / "categorized_transcription_results.json"
-    }
-    
-    return paths
-
-
-# ------------------------------ Append Mode Functions ------------------------------ #
-def load_existing_categorized_data(output_path: Path) -> Tuple[List[Dict[str, Any]], Dict[str, int], Dict[str, int]]:
-    """Load existing categorized data for append mode."""
-    if not output_path.exists():
-        return [], {}, {}
-    
-    try:
-        with open(output_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        
-        items = data.get("items", [])
-        
-        # Count existing categories and airlines
-        counts = {}
-        airline_counts = {}
-        
-        for item in items:
-            category = item.get("category", "General Communications")
-            airline = item.get("airline", "Unknown")
-            
-            counts[category] = counts.get(category, 0) + 1
-            airline_counts[airline] = airline_counts.get(airline, 0) + 1
-        
-        return items, counts, airline_counts
-    except Exception as e:
-        print(f"Warning: Could not load existing categorized data: {e}")
-        return [], {}, {}
-
-
-def get_processed_chunk_numbers(existing_items: List[Dict[str, Any]]) -> set:
-    """Get set of already processed chunk numbers."""
-    return {item.get("chunk_number") for item in existing_items if "chunk_number" in item}
-
-
-def append_categorized_data(new_items: List[Dict[str, Any]], output_path: Path, 
-                          existing_items: List[Dict[str, Any]], 
-                          counts: Dict[str, int], airline_counts: Dict[str, int],
-                          duplicate_count: int) -> None:
-    """Append new categorized items to existing file."""
-    all_items = existing_items + new_items
-    
-    # Only update counts for new items (existing counts are already correct)
-    for item in new_items:
-        category = item.get("category", "General Communications")
-        airline = item.get("airline", "Unknown")
-        counts[category] = counts.get(category, 0) + 1
-        airline_counts[airline] = airline_counts.get(airline, 0) + 1
-    
-    # Create output structure
-    output = {
-        "metadata": {
-            "created_utc": existing_items[0].get("timestamp_utc", "") if existing_items else "",
-            "last_updated_utc": new_items[-1].get("timestamp_utc", "") if new_items else "",
-            "total_items": len(all_items),
-            "duplicate_count": duplicate_count,
-            "unified_config": str(output_path.parent.parent.parent.parent / "config" / "final_aviation_ultimate_with_emergency.json")
-        },
-        "items": all_items
-    }
-    
-    # Use atomic write to prevent corruption (write to temp file then rename)
-    temp_path = output_path.with_suffix('.json.tmp')
-    try:
-        with open(temp_path, "w", encoding="utf-8") as f:
-            json.dump(output, f, indent=2, ensure_ascii=False)
-        # Atomic rename - this prevents partial writes from being read
-        temp_path.replace(output_path)
-    except Exception as e:
-        # Clean up temp file if write failed
-        if temp_path.exists():
-            temp_path.unlink()
-        raise e
-
-
-# ------------------------------ File Monitoring ------------------------------ #
-class TranscriptionFileHandler(FileSystemEventHandler):
-    """Handle file system events for transcription file."""
-    
-    def __init__(self, paths: dict, category_keywords: dict, airline_callsigns: dict, phonetic_dict: dict = None):
-        self.paths = paths
-        self.category_keywords = category_keywords
-        self.airline_callsigns = airline_callsigns
+    def __init__(self, input_file_path: Path, output_file_path: Path, 
+                 category_keywords: dict = None, airline_callsigns: dict = None, 
+                 phonetic_dict: dict = None):
+        self.input_file_path = input_file_path
+        self.output_file_path = output_file_path
+        self.category_keywords = category_keywords or {}
+        self.airline_callsigns = airline_callsigns or {}
         self.phonetic_dict = phonetic_dict or {}
-        self.last_processed_size = 0
-        
-        # Initialize with current file size
-        if self.paths["input"].exists():
-            self.last_processed_size = self.paths["input"].stat().st_size
+        self.is_cleaning = False  # Prevent recursive cleaning
+        self.last_cleaned_time = 0
+        self.min_clean_interval = 2  # Minimum seconds between cleanings
     
+    def remove_repeated_patterns(self, text: str) -> str:
+        """
+        Remove repeated patterns where the same word or character appears multiple times.
+        Examples:
+        - "? ? ? ? ? ?" -> ""
+        - "? ?" -> ""
+        - "uh uh uh uh" -> ""
+        - "the the the" -> ""
+        """
+        if not text:
+            return text
+        
+        original_text = text
+        
+        # Pre-filter: Check for excessive repetition (garbage detection)
+        word_list = text.lower().split()
+        if len(word_list) > 20:  # Only check if text is long enough
+            # Count common filler words
+            uh_count = word_list.count('uh')
+            the_count = word_list.count('the')
+            bye_count = text.lower().count('bye')
+            
+            # If more than 50% of words are "uh" or "the", it's garbage
+            if uh_count > len(word_list) * 0.5 or the_count > len(word_list) * 0.5:
+                return ''
+            
+            # If "bye" appears more than 10 times, it's garbage
+            if bye_count > 10:
+                return ''
+        
+        # Check for dot/period spam (. . . or 。 。 。)
+        dot_count = text.count('. .') + text.count('。')
+        if dot_count > 20:  # If more than 20 spaced dots, it's garbage
+            return ''
+        
+        # Check for excessive "subscribe" or "thank you for watching" spam
+        if text.lower().count('subscribe') > 3 or text.lower().count('thank you for watching') > 3:
+            return ''
+        
+        # Check for simple "? ?" patterns that are just noise (with any amount of whitespace)
+        # Matches: "? ?", "?  ?", "?   ?", etc.
+        text_stripped = text.strip()
+        if re.match(r'^\s*\?\s+\?\s*$', text_stripped):
+            return ''
+        
+        # Check for "? ?" with excessive whitespace (like "?  ?" with lots of spaces)
+        # Remove all whitespace and check if it's just question marks
+        text_no_space = re.sub(r'\s+', '', text_stripped)
+        if len(text_no_space) <= 3 and text_no_space.count('?') == len(text_no_space):
+            return ''
+        
+        # Pattern 1: If the entire text is just repeated single characters with spaces (like "? ? ?")
+        # Check if text matches pattern of single char repeated with spaces
+        if re.match(r'^(\S)\s+(?:\1\s*)*\1?$', text_stripped):
+            return ''
+        
+        # Pattern 2: Remove repeated single characters/punctuation within text (2+ times)
+        # Matches "? ?" or "? ? ?" anywhere in the text
+        text = re.sub(r'(\S)\s+\1(?:\s+\1)*', '', text)
+
+        # Pattern 2a: Explicitly remove spaced question-mark sequences (robust to mixed spacing)
+        # e.g., "? ?", "?   ?   ?" -> ""
+        text = re.sub(r'(?:\?\s+){1,}\?', '', text)
+        # Also remove question marks with very long spaces
+        text = re.sub(r'\?\s{10,}\?', '', text)
+
+        # Pattern 2b: Remove hyphenated stutter of the same letter (e.g., "S-S-S-S-", case-insensitive)
+        # Allows optional spaces around hyphens and an optional trailing hyphen
+        text = re.sub(r'\b([A-Za-z])(?:\s*-\s*\1){2,}-?\b', '', text, flags=re.IGNORECASE)
+
+        # Pattern 2c: Remove laughter strings (e.g., "hahaha", "ahahahaha", long repeats)
+        text = re.sub(r'(?i)(?:ha|ah){3,}', '', text)
+        text = re.sub(r'(?i)(?:heh){2,}', '', text)
+
+        # Pattern 2d: Remove hyphen-dot noise like "-.." or "-...."
+        text = re.sub(r'-\.{2,}', '', text)
+        
+        # Pattern 3: Remove repeated words (3 or more times)
+        # Matches patterns like "uh uh uh" or "the the the"
+        text = re.sub(r'\b(\w+)\s+\1\s+\1(?:\s+\1)*\b', '', text, flags=re.IGNORECASE)
+        
+        # Pattern 4: Remove sequences of the same character repeated multiple times (5+ times)
+        # Matches patterns like "?????" or "....."
+        text = re.sub(r'(.)\1{4,}', '', text)
+        
+        # Clean up any resulting multiple spaces (including very long spaces)
+        text = re.sub(r'\s{2,}', ' ', text)
+        text = re.sub(r'\s+', ' ', text).strip()
+        
+        return text
+        
     def on_modified(self, event):
         """Handle file modification events."""
         if event.is_directory:
             return
         
-        if event.src_path == str(self.paths["input"]):
-            self.process_new_transcripts()
+        if event.src_path == str(self.input_file_path):
+            self.clean_file()
     
-    def process_new_transcripts(self):
-        """Process only new transcripts since last run."""
+    def clean_file(self):
+        """Clean the JSON file by removing invalid entries and cleaning text. Appends to output file."""
+        # Prevent recursive cleaning and rate limit
+        current_time = time.time()
+        if self.is_cleaning or (current_time - self.last_cleaned_time) < self.min_clean_interval:
+            return
+        
+        self.is_cleaning = True
+        self.last_cleaned_time = current_time
+        
         try:
-            if not self.paths["input"].exists():
+            # Check if input file exists and is not empty
+            if not self.input_file_path.exists() or self.input_file_path.stat().st_size == 0:
                 return
             
-            current_size = self.paths["input"].stat().st_size
-            if current_size <= self.last_processed_size:
+            # Load existing cleaned data if output file exists
+            existing_cleaned_items = []
+            processed_chunk_numbers = set()
+            output_data = {}
+            
+            if self.output_file_path.exists() and self.output_file_path.stat().st_size > 0:
+                try:
+                    with open(self.output_file_path, "r", encoding="utf-8") as f:
+                        output_data = json.load(f)
+                    existing_cleaned_items = output_data.get("items", [])
+                    # Track which chunk_numbers have already been processed
+                    processed_chunk_numbers = {item.get("chunk_number") for item in existing_cleaned_items if "chunk_number" in item}
+                    
+                    # Add missing fields (category, airline, duplicate_flag) to existing items if needed
+                    if self.category_keywords or self.airline_callsigns:
+                        updated_existing = 0
+                        for item in existing_cleaned_items:
+                            needs_update = False
+                            if "category" not in item and self.category_keywords:
+                                raw_text = item.get("raw_transcription", "")
+                                item["category"] = categorize_communication(raw_text, self.category_keywords)
+                                needs_update = True
+                            if "airline" not in item and self.airline_callsigns:
+                                raw_text = item.get("raw_transcription", "")
+                                callsign = detect_callsign(raw_text, self.airline_callsigns, self.phonetic_dict)
+                                item["airline"] = callsign if callsign else "Unknown"
+                                needs_update = True
+                            if "duplicate_flag" not in item:
+                                item["duplicate_flag"] = False
+                                needs_update = True
+                            if needs_update:
+                                updated_existing += 1
+                        if updated_existing > 0:
+                            print(f"📝 Updated {updated_existing} existing items with missing fields")
+                except (json.JSONDecodeError, Exception) as e:
+                    print(f"⚠️  Warning: Could not read existing cleaned file: {e}. Starting fresh.")
+                    existing_cleaned_items = []
+                    processed_chunk_numbers = set()
+            
+            # Load data from input file
+            with open(self.input_file_path, "r", encoding="utf-8") as f:
+                input_data = json.load(f)
+            
+            input_items = input_data.get("items", [])
+            if not input_items:
                 return
             
-            print(f"\n🔄 New transcripts detected! Processing...")
-            print(f"📊 File size changed: {self.last_processed_size} → {current_size}")
-            
-            # Load existing categorized data
-            existing_items, counts, airline_counts = load_existing_categorized_data(self.paths["output"])
-            processed_chunks = get_processed_chunk_numbers(existing_items)
-            
-            # Load new transcription data
-            with open(self.paths["input"], "r", encoding="utf-8") as f:
-                data = json.load(f)
-            
-            all_items = data.get("items", [])
-            
-            # Find new items (not yet processed)
-            new_items = []
-            for item in all_items:
-                chunk_num = item.get("chunk_number")
-                if chunk_num not in processed_chunks:
-                    new_items.append(item)
+            # Filter to only process new items (not already in cleaned file)
+            new_items = [item for item in input_items if item.get("chunk_number") not in processed_chunk_numbers]
             
             if not new_items:
-                print("  No new transcripts to process")
-                self.last_processed_size = current_size
+                # No new items to process
                 return
             
-            print(f"  Found {len(new_items)} new transcripts to process")
+            original_count = len(new_items)
             
-            # Filter out invalid transcriptions and process valid items
-            categorized_new_items = []
-            filtered_count = 0
+            # Clean and filter new items
+            cleaned_new_items = []
+            removed_count = 0
+            cleaned_text_count = 0
             
             for item in new_items:
                 raw_text = item.get("raw_transcription", "")
                 
-                # Skip invalid transcriptions (only dots, thank you, etc.)
-                if not is_valid_transcription(raw_text):
-                    filtered_count += 1
+                if not raw_text or not raw_text.strip():
+                    removed_count += 1
                     continue
                 
-                category = categorize_communication(raw_text, self.category_keywords)
-                callsign = detect_callsign(raw_text, self.airline_callsigns, self.phonetic_dict)
+                # Check for "thank" in specific cases (case insensitive)
+                raw_text_lower = raw_text.lower().strip()
                 
-                item["category"] = category
-                item["airline"] = callsign if callsign else "Unknown"
-                categorized_new_items.append(item)
+                # Remove if it's just a hyphen or multiple hyphens (including "- -" or "- - -")
+                if re.match(r'^[-\s]+$', raw_text.strip()):
+                    removed_count += 1
+                    continue
+                
+                # Case 1: Check if entire text is just "thank you", "thanks", or "thank" (standalone)
+                # Also check for variations with minimal content (just thank you with punctuation)
+                stripped_text = raw_text_lower.strip('.,!? ')
+                if stripped_text in ['thank you', 'thanks', 'thank', 'thank you very much', 'thanks very much', 'thank you so much', 
+                                      'thank you for watching', 'thanks for watching', 'thank you for watching this video']:
+                    removed_count += 1
+                    continue
+                
+                # Case 1a: Remove if transcription is ONLY "thank you" with minimal words (≤4 words with thank/watching)
+                # This catches cases like "thank you", "thank you.", "one thank you", "thank you very much", etc.
+                word_count = len(raw_text_lower.split())
+                if word_count <= 5 and ('thank' in raw_text_lower or 'watching' in raw_text_lower):
+                    removed_count += 1
+                    continue
+                
+                # Case 2: Check for repeated "thank" patterns
+                # Matches: "thank thank", "thank you thank you", "thanks thanks", etc.
+                if re.search(r'\b(thank(?:\s+you)?|thanks)\s+\1\b', raw_text_lower):
+                    removed_count += 1
+                    continue
+                
+                # Case 2a: Check for repeated phrases like "Thank you for your time" (3+ times)
+                # This catches entries like "Thank you for your time. Thank you for your time. Thank you for your time..."
+                thank_phrases = [
+                    r'thank\s+you\s+for\s+your\s+time',
+                    r'thank\s+you\s+very\s+much',
+                    r'thanks\s+very\s+much',
+                ]
+                found_repeated_phrase = False
+                for phrase in thank_phrases:
+                    matches = len(re.findall(phrase, raw_text_lower))
+                    if matches >= 3:
+                        found_repeated_phrase = True
+                        break
+                if found_repeated_phrase:
+                    removed_count += 1
+                    continue
+                
+                # Case 3: Check for spam "subscribe" messages
+                # Matches variations of "Thank you for watching! Please subscribe..."
+                if 'subscribe' in raw_text_lower and 'thank' in raw_text_lower:
+                    # Check for common spam patterns
+                    spam_patterns = [
+                        r'thank\s+you\s+for\s+watching.*subscribe',
+                        r'subscribe.*channel.*for\s+more',
+                        r'please\s+subscribe.*channel',
+                    ]
+                    if any(re.search(pattern, raw_text_lower) for pattern in spam_patterns):
+                        removed_count += 1
+                        continue
+                
+                # Case 3a: Check if text is mostly whitespace/question marks followed by copyright
+                # Pattern: "? ?" with lots of spaces and "©" or "BF-WATCH"
+                text_before_copyright = raw_text.split('©')[0] if '©' in raw_text else raw_text
+                text_before_copyright = text_before_copyright.split('BF-WATCH')[0] if 'BF-WATCH' in raw_text else text_before_copyright
+                # Remove all whitespace and check if it's mostly just question marks
+                text_no_space = re.sub(r'\s+', '', text_before_copyright)
+                if len(text_no_space) <= 5 and text_no_space.count('?') >= len(text_no_space) * 0.8:
+                    # If it's mostly question marks with minimal content, remove it
+                    removed_count += 1
+                    continue
+                
+                # Clean the text: Remove © and everything after it
+                original_text = raw_text
+                if '©' in raw_text:
+                    raw_text = raw_text.split('©')[0].strip()
+                    cleaned_text_count += 1
+                
+                # Remove "BF-WATCH" and everything after it
+                if 'BF-WATCH' in raw_text:
+                    raw_text = raw_text.split('BF-WATCH')[0].strip()
+                    cleaned_text_count += 1
+                
+                # Remove "Thank you for watching!" from the end of transcriptions
+                # This cleans valid transcriptions that end with spam
+                text_before_watching = raw_text
+                raw_text = re.sub(r'\s*[Tt]hank\s+you\s+for\s+watching[!.]?\s*$', '', raw_text, flags=re.IGNORECASE)
+                raw_text = re.sub(r'\s*[Tt]hanks\s+for\s+watching[!.]?\s*$', '', raw_text, flags=re.IGNORECASE)
+                if raw_text != text_before_watching:
+                    cleaned_text_count += 1
+                
+                # Remove repeated patterns
+                text_before_pattern_removal = raw_text
+                raw_text = self.remove_repeated_patterns(raw_text)
+                if raw_text != text_before_pattern_removal:
+                    cleaned_text_count += 1
+                
+                # Remove standalone 'bye' tokens (case-insensitive), optionally followed by punctuation
+                text_before_bye = raw_text
+                raw_text = re.sub(r'\bbye\b[.!?]?', '', raw_text, flags=re.IGNORECASE)
+                if raw_text != text_before_bye:
+                    cleaned_text_count += 1
+                
+                # Clean up extra whitespace (including very long spaces)
+                raw_text = re.sub(r'\s{2,}', ' ', raw_text)  # Replace 2+ spaces with single space
+                raw_text = re.sub(r'\s+', ' ', raw_text).strip()  # Final cleanup
+                
+                # Skip if empty after cleaning
+                if not raw_text:
+                    removed_count += 1
+                    continue
+                
+                # Update the transcription
+                if raw_text != original_text:
+                    item["raw_transcription"] = raw_text
+                
+                # Add categorization and callsign detection (like atlas.py)
+                if self.category_keywords:
+                    category = categorize_communication(raw_text, self.category_keywords)
+                    item["category"] = category
+                else:
+                    item["category"] = "General Communications"
+                
+                if self.airline_callsigns:
+                    callsign = detect_callsign(raw_text, self.airline_callsigns, self.phonetic_dict)
+                    item["airline"] = callsign if callsign else "Unknown"
+                else:
+                    item["airline"] = "Unknown"
+                
+                # Initialize duplicate_flag (will be set by flag_duplicates)
+                item["duplicate_flag"] = False
+                
+                cleaned_new_items.append(item)
             
-            if filtered_count > 0:
-                print(f"  ⚠️  Filtered out {filtered_count} invalid transcriptions (dots, thank you, etc.)")
+            # Append new cleaned items to existing ones
+            all_cleaned_items = existing_cleaned_items + cleaned_new_items
             
-            # Detect duplicates in new items
-            categorized_new_items, duplicate_count = flag_duplicates(categorized_new_items)
+            # Flag duplicates in ALL items (existing + new) together
+            if all_cleaned_items:
+                all_cleaned_items, duplicate_count = flag_duplicates(all_cleaned_items)
+                if duplicate_count > 0:
+                    print(f"🔍 Flagged {duplicate_count} duplicate items")
             
-            # Append to existing data
-            append_categorized_data(categorized_new_items, self.paths["output"], 
-                                  existing_items, counts, airline_counts, duplicate_count)
+            # Prepare output data structure
+            if not output_data:
+                # If no existing output file, use input file structure as base
+                output_data = {
+                    "created_utc": input_data.get("created_utc", ""),
+                    "model_used": input_data.get("model_used", ""),
+                    "items": all_cleaned_items
+                }
+                # Preserve last_updated_utc if it exists in input
+                if "last_updated_utc" in input_data:
+                    output_data["last_updated_utc"] = input_data["last_updated_utc"]
+            else:
+                # Update existing output data
+                output_data["items"] = all_cleaned_items
+                # Update last_updated_utc from input if available
+                if "last_updated_utc" in input_data:
+                    output_data["last_updated_utc"] = input_data["last_updated_utc"]
             
-            print(f"✅ Live processing complete! Added {len(categorized_new_items)} new items")
-            print(f"📝 Total categorized items: {len(existing_items) + len(categorized_new_items)}")
+            # Update metadata if it exists (for categorized_transcription_results.json format)
+            if "metadata" in output_data:
+                output_data["metadata"]["total_items"] = len(all_cleaned_items)
             
-            # Update last processed size
-            self.last_processed_size = current_size
+            # Write all cleaned data (existing + new) to output file
+            with open(self.output_file_path, "w", encoding="utf-8") as f:
+                json.dump(output_data, f, indent=2, ensure_ascii=False)
             
+            if removed_count > 0 or cleaned_text_count > 0:
+                print(f"🧹 Processed {original_count} new items: Removed {removed_count} invalid entries, cleaned {cleaned_text_count} texts.")
+            if cleaned_new_items:
+                print(f"📝 Added {len(cleaned_new_items)} new items. Total in cleaned file: {len(all_cleaned_items)}")
+            print(f"💾 Saved to: {self.output_file_path}")
+            
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON decode error: {e}")
         except Exception as e:
-            print(f"❌ Error in live processing: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"❌ Cleaning error: {e}")
+        finally:
+            self.is_cleaning = False
 
 
-# ------------------------------ Main Logic ------------------------------ #
-def process_transcripts_once(paths: dict, category_keywords: dict, airline_callsigns: dict, phonetic_dict: dict = None):
-    """Process all transcripts once (initial run or manual processing)."""
-    print("📖 Reading transcripts...\n")
+def run_periodic_cleaning(input_file_path: Path, output_file_path: Path, 
+                          category_keywords: dict, airline_callsigns: dict, 
+                          phonetic_dict: dict, interval: int = 30):
+    """Run periodic cleaning in addition to file monitoring."""
+    cleaner = TranscriptionCleaner(input_file_path, output_file_path, 
+                                   category_keywords, airline_callsigns, phonetic_dict)
+    
+    while True:
+        try:
+            time.sleep(interval)
+            cleaner.clean_file()
+        except KeyboardInterrupt:
+            break
+        except Exception as e:
+            print(f"❌ Periodic cleaning error: {e}")
 
-    with open(paths['input'], "r", encoding="utf-8") as f:
-        data = json.load(f)
 
-    items = data.get("items", [])
-    
-    # Load existing categorized data for append mode
-    existing_items, counts, airline_counts = load_existing_categorized_data(paths['output'])
-    processed_chunks = get_processed_chunk_numbers(existing_items)
-    
-    # Find unprocessed items
-    new_items = []
-    for item in items:
-        chunk_num = item.get("chunk_number")
-        if chunk_num not in processed_chunks:
-            new_items.append(item)
-    
-    if not new_items:
-        print("✅ All transcripts already processed!")
-        return
-    
-    print(f"Processing {len(new_items)} new transcripts...")
-    
-    categorized_items: List[Dict[str, Any]] = []
-    filtered_count = 0
-    
-    for idx, item in enumerate(new_items, 1):
-        if idx % 10 == 0:
-            print(f"  Processed {idx}/{len(new_items)}...", end="\r")
-        
-        raw_text = item.get("raw_transcription", "")
-        
-        # Skip invalid transcriptions (only dots, thank you, etc.)
-        if not is_valid_transcription(raw_text):
-            filtered_count += 1
-            continue
-        
-        category = categorize_communication(raw_text, category_keywords)
-        callsign = detect_callsign(raw_text, airline_callsigns, phonetic_dict)
-
-        # Count category
-        counts[category] = counts.get(category, 0) + 1
-
-        # Count airline if detected
-        airline_name = callsign if callsign else "Unknown"
-        airline_counts[airline_name] = airline_counts.get(airline_name, 0) + 1
-
-        item["category"] = category
-        item["airline"] = airline_name
-        categorized_items.append(item)
-    
-    print(f"  Processed {len(new_items)}/{len(new_items)} ✅")
-    
-    if filtered_count > 0:
-        print(f"  ⚠️  Filtered out {filtered_count} invalid transcriptions (dots, thank you, etc.)")
-
-    # Detect and flag duplicates
-    print("\n🔍 Detecting duplicates...")
-    categorized_items, duplicate_count = flag_duplicates(categorized_items)
-
-    # Append to existing data
-    append_categorized_data(categorized_items, paths['output'], 
-                          existing_items, counts, airline_counts, duplicate_count)
-
-    # ---- Print summaries ----
-    # Calculate total counts for all items (existing + new)
-    total_items = existing_items + categorized_items
-    total_category_counts = {}
-    total_airline_counts = {}
-    
-    for item in total_items:
-        category = item.get("category", "General Communications")
-        airline = item.get("airline", "Unknown")
-        total_category_counts[category] = total_category_counts.get(category, 0) + 1
-        total_airline_counts[airline] = total_airline_counts.get(airline, 0) + 1
-    
-    print("\n" + "=" * 70)
-    print("📊 SUMMARY OF CATEGORIES")
+def main():
+    """Main entry point."""
     print("=" * 70)
-    for cat, cnt in sorted(total_category_counts.items(), key=lambda x: x[1], reverse=True):
-        percentage = (cnt / len(total_items)) * 100
-        print(f"{cat:<30} {cnt:>4} ({percentage:>5.1f}%)")
-
-    print("\n" + "=" * 70)
-    print("✈️  SUMMARY OF AIRLINES")
+    print("🧹 AUTOMATIC TRANSCRIPTION CLEANER")
     print("=" * 70)
-    for airline, cnt in sorted(total_airline_counts.items(), key=lambda x: x[1], reverse=True):
-        percentage = (cnt / len(total_items)) * 100
-        print(f"{airline:<30} {cnt:>4} ({percentage:>5.1f}%)")
-
-    print("\n" + "=" * 70)
-    print("🔁 DUPLICATE ANALYSIS")
-    print("=" * 70)
-    print(f"Repeated communications: {duplicate_count}")
-    print(f"Unique communications: {len(total_items) - duplicate_count}")
-    print(f"Total items processed: {len(total_items)}")
-    print(f"Duplicate percentage: {(duplicate_count/len(total_items)*100):.1f}%")
     
-    print("\n✅ Categorization complete!")
-    print(f"📝 Results saved to: {paths['output']}")
-
-
-def start_live_monitoring(paths: dict, category_keywords: dict, airline_callsigns: dict, phonetic_dict: dict = None):
-    """Start live monitoring of transcription file."""
-    print("\n🔄 Starting live monitoring mode...")
-    print(f"📁 Monitoring: {paths['input']}")
-    print("Press Ctrl+C to stop monitoring")
-    print("-" * 70)
+    # Setup file paths
+    base_dir = Path("/home/atc_voice/ATC-Voice")
+    input_file_path = base_dir / "src" / "data" / "logs" / "transcripts" / "transcripts.json"
+    output_file_path = base_dir / "src" / "data" / "logs" / "transcripts" / "cleaned_transcripts.json"
+    config_dir = base_dir / "config"
+    unified_config_path = config_dir / "final_aviation_ultimate_with_emergency.json"
+    phonetic_path = config_dir / "phonetic_alphabet.json"
     
-    # Process any existing unprocessed transcripts first
-    process_transcripts_once(paths, category_keywords, airline_callsigns, phonetic_dict)
+    if not input_file_path.exists():
+        print(f"❌ File not found: {input_file_path}")
+        sys.exit(1)
+    
+    print(f"📂 Reading from: {input_file_path}")
+    print(f"📝 Writing to: {output_file_path}")
+    
+    # Load configuration files (like atlas.py)
+    category_keywords = {}
+    airline_callsigns = {}
+    phonetic_dict = {}
+    
+    if unified_config_path.exists():
+        print("📚 Loading unified configuration...")
+        try:
+            category_keywords, airline_callsigns = load_unified_config(unified_config_path)
+            print(f"✅ Loaded {len(category_keywords)} categories and {len(airline_callsigns)} callsigns")
+        except Exception as e:
+            print(f"⚠️  Warning: Could not load unified config: {e}")
+    else:
+        print(f"⚠️  Warning: Unified config not found at {unified_config_path}")
+    
+    if phonetic_path.exists():
+        try:
+            phonetic_dict = load_phonetic_alphabet(phonetic_path)
+            print(f"✅ Loaded {len(phonetic_dict)} phonetic mappings")
+        except Exception as e:
+            print(f"⚠️  Warning: Could not load phonetic alphabet: {e}")
+    else:
+        print(f"⚠️  Warning: Phonetic alphabet not found at {phonetic_path}")
+    
+    print()
+    print("🔄 Auto-cleaner features:")
+    print("   - Removes standalone 'thank you', 'thanks', 'thank' entries")
+    print("   - Removes repeated 'thank' patterns (e.g., 'thank thank')")
+    print("   - Removes spam 'subscribe' messages (e.g., 'Thank you for watching! Please subscribe...')")
+    print("   - Removes © symbols and text after them")
+    print("   - Removes repeated patterns (e.g., '? ? ? ?', 'uh uh uh')")
+    print("   - Removes spaced question-mark sequences (e.g., '? ?', '?   ?')")
+    print("   - Removes standalone 'bye' tokens")
+    print("   - Removes hyphenated stutters (e.g., 'S-S-S-S-') and laughter strings ('hahaha')")
+    print("   - Removes hyphen-dot noise (e.g., '-..')")
+    print("   - Cleans up whitespace")
+    if category_keywords:
+        print("   - Categorizes communications (like atlas.py)")
+    if airline_callsigns:
+        print("   - Detects airline callsigns (like atlas.py)")
+    print("   - Flags duplicates")
+    print("   - Runs continuously")
+    print()
+    
+    # Create cleaner with configs
+    cleaner = TranscriptionCleaner(input_file_path, output_file_path, 
+                                 category_keywords, airline_callsigns, phonetic_dict)
+    
+    # Initial clean
+    print("🧹 Running initial clean...")
+    cleaner.clean_file()
     
     # Set up file monitoring
-    event_handler = TranscriptionFileHandler(paths, category_keywords, airline_callsigns, phonetic_dict)
     observer = Observer()
-    observer.schedule(event_handler, path=str(paths['input'].parent), recursive=False)
-    
+    observer.schedule(cleaner, path=str(input_file_path.parent), recursive=False)
     observer.start()
-    print("✅ File monitoring started")
     
-    # Also set up periodic checking as backup
-    last_check_time = time.time()
-    check_interval = 5  # Check every 5 seconds as backup
+    print("✅ Auto-cleaner started!")
+    print("Press Ctrl+C to stop")
+    print("-" * 70)
     
     try:
+        # Also run periodic cleaning as backup (every 30 seconds)
         while True:
-            time.sleep(1)
-            
-            # Periodic backup check in case file monitoring misses something
-            current_time = time.time()
-            if current_time - last_check_time >= check_interval:
-                last_check_time = current_time
-                event_handler.process_new_transcripts()
-                
+            time.sleep(30)
+            cleaner.clean_file()
     except KeyboardInterrupt:
-        print("\n🛑 Stopping live monitoring...")
+        print("\n🛑 Stopping auto-cleaner...")
         observer.stop()
     
     observer.join()
-    print("✅ Live monitoring stopped.")
-
-
-def main(debug=False, live_mode=False):
-    print("=" * 70)
-    print("🏷️  ATC TRANSCRIPT CATEGORIZER")
-    print("=" * 70)
-    
-    # Setup paths
-    paths = setup_paths()
-    
-    # Verify required files exist
-    missing_files = []
-    for name, path in paths.items():
-        if name in ["unified_config", "input"]:
-            if not path.exists():
-                missing_files.append(f"{name}: {path}")
-    
-    if missing_files:
-        print("\n❌ Missing required files:")
-        for mf in missing_files:
-            print(f"   - {mf}")
-        print("\n📝 Please ensure these files exist:")
-        print(f"   - {paths['unified_config']}")
-        print(f"   - {paths['input']}")
-        sys.exit(1)
-    
-    print(f"📂 Input file: {paths['input']}")
-    print(f"📂 Output file: {paths['output']}")
-    print(f"📚 Unified config: {paths['unified_config']}")
-    print()
-    
-    print("Loading unified configuration...")
-    category_keywords, airline_callsigns = load_unified_config(paths['unified_config'])
-    
-    # Load phonetic alphabet for General Aviation detection
-    phonetic_dict = {}
-    if paths['phonetic'].exists():
-        phonetic_dict = load_phonetic_alphabet(paths['phonetic'])
-        print(f"✅ Loaded {len(category_keywords)} categories, {len(airline_callsigns)} callsigns, and {len(phonetic_dict)} phonetic mappings.")
-    else:
-        print(f"✅ Loaded {len(category_keywords)} categories and {len(airline_callsigns)} callsigns.")
-        print("⚠️  Phonetic alphabet not found - General Aviation detection may be limited.")
-    
-    if live_mode:
-        start_live_monitoring(paths, category_keywords, airline_callsigns, phonetic_dict)
-    else:
-        process_transcripts_once(paths, category_keywords, airline_callsigns, phonetic_dict)
+    print("✅ Auto-cleaner stopped.")
 
 
 if __name__ == "__main__":
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="ATC Transcript Categorizer")
-    parser.add_argument("--live", action="store_true", help="Enable live monitoring mode")
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
-    
-    args = parser.parse_args()
-    
     try:
-        main(debug=args.debug, live_mode=args.live)
-    except KeyboardInterrupt:
-        print("\n\n🛑 Interrupted by user.")
-        sys.exit(130)
+        main()
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
+
+

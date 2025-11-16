@@ -1,18 +1,11 @@
 #!/bin/bash
-# Stop atlas.py and auto_cleaner.py
+# Stop atlas.py (replaces both old atlas.py and auto_cleaner.py)
 
 echo "======================================================================"
 echo "🛑 Stopping ATC Atlas and Auto-Cleaner"
 echo "======================================================================"
 
-# Stop auto_cleaner
-echo "🧹 Stopping auto-cleaner..."
-pkill -f "auto_cleaner.py"
-if [ $? -eq 0 ]; then
-    echo "   ✅ Auto-cleaner stopped"
-else
-    echo "   ℹ️  Auto-cleaner was not running"
-fi
+# Atlas.py is already stopped above (it replaces both old scripts)
 
 # Stop atlas.py
 echo "🏷️  Stopping atlas.py..."
