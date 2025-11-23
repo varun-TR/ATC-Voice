@@ -192,7 +192,7 @@ class TranscriptionCleaner(FileSystemEventHandler):
                                 needs_update = True
                             if "airline" not in item and self.airline_callsigns:
                                 raw_text = item.get("raw_transcription", "")
-                                callsign = detect_callsign(raw_text, self.airline_callsigns, self.phonetic_dict)
+                                callsign = detect_callsign(raw_text, self.airline_callsigns)
                                 item["airline"] = callsign if callsign else "Unknown"
                                 needs_update = True
                             if "duplicate_flag" not in item:
@@ -358,7 +358,7 @@ class TranscriptionCleaner(FileSystemEventHandler):
                     item["category"] = "General Communications"
                 
                 if self.airline_callsigns:
-                    callsign = detect_callsign(raw_text, self.airline_callsigns, self.phonetic_dict)
+                    callsign = detect_callsign(raw_text, self.airline_callsigns)
                     item["airline"] = callsign if callsign else "Unknown"
                 else:
                     item["airline"] = "Unknown"

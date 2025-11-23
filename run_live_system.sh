@@ -119,10 +119,15 @@ if [ "$available_mem" -lt 1024 ]; then
     echo "   - Adding more swap space"
     echo "   - Upgrading system RAM"
     echo ""
-    read -p "Continue anyway? (y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
+    # Skip interactive prompt if running in background (non-interactive)
+    if [ -t 0 ]; then
+        read -p "Continue anyway? (y/n) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    else
+        echo "⚠️  Non-interactive mode: Continuing automatically..."
     fi
 fi
 

@@ -1521,17 +1521,31 @@ def main():
                 ga_df = known_df[known_df['Type'] == 'General Aviation'].copy()
 
                 # Add registration name column for GA aircraft
+                # First, try to get registration_name from transcription_df if available
                 def get_registration_name(airline_str):
                     if 'General Aviation' in airline_str:
                         match = re.search(r'\((N[0-9A-Z]+)\)', airline_str)
                         if match:
                             n_number = match.group(1)
+                            # Check if transcription_df has registration_name column with data
+                            if transcription_df is not None and 'registration_name' in transcription_df.columns:
+                                # Find matching entries in transcription_df
+                                matching_rows = transcription_df[
+                                    (transcription_df['airline'] == airline_str) & 
+                                    (transcription_df['registration_name'].notna())
+                                ]
+                                if not matching_rows.empty:
+                                    reg_name = matching_rows['registration_name'].iloc[0]
+                                    if reg_name and str(reg_name).strip():
+                                        return str(reg_name).strip()
+                            
+                            # Fallback to nnumber_lookup if not in transcription_df
                             callsigns, phonetic_dict, nnumber_lookup = load_airline_configs()
                             if nnumber_lookup and n_number in nnumber_lookup:
                                 owner = nnumber_lookup[n_number]
                                 if isinstance(owner, list):
                                     owner = " ".join(owner)
-                                return str(owner)
+                                return str(owner).strip()
                     return None
 
                 ga_df['registration_name'] = ga_df['Airline/Flight'].apply(get_registration_name)
@@ -1576,14 +1590,21 @@ def main():
                 
                 with airline_tab2:
                     if not ga_df.empty:
+                        # Ensure GA dataframe is sorted by Count descending (most recent/active first)
+                        ga_df_sorted = ga_df.sort_values('Count', ascending=False).copy()
+                        
                         col1, col2 = st.columns([1, 1])
                         with col1:
-                            display_ga = ga_df[['Airline/Flight', 'registration_name', 'Count']].rename(
+                            # Display all GA aircraft sorted by count
+                            display_ga = ga_df_sorted[['Airline/Flight', 'registration_name', 'Count']].rename(
                                 columns={'Airline/Flight': 'Tail Number', 'registration_name': 'Registration Name'}
                             )
                             st.dataframe(display_ga, use_container_width=True, hide_index=True, height=400)
                         with col2:
-                            top_ga = ga_df.head(15)
+                            # Get top 15 GA aircraft (most communications)
+                            top_ga = ga_df_sorted.head(15)
+                            
+                            # Create bar chart with updated data
                             fig_ga = px.bar(
                                 top_ga,
                                 x='Airline/Flight',
@@ -1594,7 +1615,14 @@ def main():
                                 color_continuous_scale='Greens',
                                 hover_data=['registration_name']
                             )
-                            fig_ga.update_layout(height=400, xaxis_tickangle=45, showlegend=False)
+                            fig_ga.update_layout(
+                                height=400, 
+                                xaxis_tickangle=45, 
+                                showlegend=False,
+                                xaxis_title='Tail Number',
+                                yaxis_title='Number of Communications',
+                                hovermode='closest'
+                            )
                             st.plotly_chart(fig_ga, use_container_width=True)
                     else:
                         st.info("No general aviation communications detected yet.")
