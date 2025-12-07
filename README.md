@@ -1,11 +1,29 @@
 # 🛫 CATSR (ATC Voice) Live Communications Dashboard
 
+##  TABLE OF CONTENTS
+
+- [Project Overview]
+- [Objectives]
+- ##  TABLE OF CONTENTS
+
+- [Project Overview]
+- [Objectives]
+- [Repository Structure]
+- [System Architecture]
+- [Installation]
+- [Create a Virtual environment and activate it]
+- [Tech Stack]
+- [Deliverables]
+- [Quick Start]
+- [Dashboard Features]
+- [License]
+
+
 ## 📌 Project Overview
 This project is part of the **GMU DAEN Capstone (Fall 2025)** and focuses on building an **Air Traffic Control (ATC) Voice Communications Dashboard**.  
 The system ingests live or recorded ATC audio, converts it into text using Speech-to-Text (STT) models, applies Natural Language Processing (NLP) for analysis, and visualizes insights in an interactive dashboard.
 
 <img width="1613" height="812" alt="image" src="https://github.com/user-attachments/assets/f876c232-bd39-477b-ac7d-d5b78e5f695c" />
-
 
 ---
 
@@ -18,12 +36,8 @@ The system ingests live or recorded ATC audio, converts it into text using Speec
   - Communication timelines
   - Flight activity summaries
   - Alerts/anomalies
-<img width="1475" height="432" alt="image" src="https://github.com/user-attachments/assets/2033c42b-2e62-47e5-81d8-a1b18a84954f" />
-<img width="1460" height="810" alt="image" src="https://github.com/user-attachments/assets/b93a4327-ce2f-403c-9ce8-44cf534f9017" />
-<img width="1686" height="852" alt="image" src="https://github.com/user-attachments/assets/c6237e0b-2373-453b-ac32-57125d4b8adc" />
-<img width="1708" height="725" alt="image" src="https://github.com/user-attachments/assets/5b0b030f-fbcb-4e30-8f65-4abf4275c06e" />
-<img width="1600" height="743" alt="image" src="https://github.com/user-attachments/assets/62aee6d4-9218-4c20-8aba-78dab7d6946a" />
 
+<img width="1600" height="743" alt="image" src="https://github.com/user-attachments/assets/62aee6d4-9218-4c20-8aba-78dab7d6946a" />
 
 ---
 
@@ -138,6 +152,12 @@ The dashboard displays:
 - **Category Analysis**: Distribution charts and breakdowns
 - **Pattern Analysis**: Hourly patterns, flight activity, timing analysis
 - **Live Data**: Reads from your existing data files automatically
+
+<img width="1475" height="432" alt="image" src="https://github.com/user-attachments/assets/2033c42b-2e62-47e5-81d8-a1b18a84954f" />
+<img width="1460" height="810" alt="image" src="https://github.com/user-attachments/assets/b93a4327-ce2f-403c-9ce8-44cf534f9017" />
+<img width="1686" height="852" alt="image" src="https://github.com/user-attachments/assets/c6237e0b-2373-453b-ac32-57125d4b8adc" />
+<img width="1708" height="725" alt="image" src="https://github.com/user-attachments/assets/5b0b030f-fbcb-4e30-8f65-4abf4275c06e" />
+
 
 ## 📜 License
 
