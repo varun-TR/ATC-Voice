@@ -2,17 +2,17 @@
 
 ##  TABLE OF CONTENTS
 
-- [Project Overview]
-- [Objectives]
-- [Repository Structure]
-- [System Architecture]
-- [Installation]
-- [Create a Virtual environment and activate it]
-- [Tech Stack]
-- [Deliverables]
-- [Quick Start]
-- [Dashboard Features]
-- [License]
+- Project Overview
+- Objectives
+- Repository Structure
+- System Architecture
+- Installation
+- Create a Virtual environment and activate it
+- Tech Stack
+- Deliverables
+- Quick Start
+- Dashboard Features
+- License
 
 
 ## 📌 Project Overview
