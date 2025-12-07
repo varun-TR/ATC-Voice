@@ -33,8 +33,6 @@ The system ingests live or recorded ATC audio, converts it into text using Speec
   - Flight activity summaries
   - Alerts/anomalies
 
-<img width="1600" height="743" alt="image" src="https://github.com/user-attachments/assets/62aee6d4-9218-4c20-8aba-78dab7d6946a" />
-
 ---
 
 ## 🏗️ Repository Structure
@@ -68,7 +66,7 @@ atc-voice-dashboard/
 
 │── docs/ # Project docs & capstone deliverables
 
-
+<img width="1600" height="743" alt="image" src="https://github.com/user-attachments/assets/62aee6d4-9218-4c20-8aba-78dab7d6946a" />
 ---
 
 ## ⚙️ Installation
