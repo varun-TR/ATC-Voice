@@ -4,10 +4,6 @@
 
 - [Project Overview]
 - [Objectives]
-- ##  TABLE OF CONTENTS
-
-- [Project Overview]
-- [Objectives]
 - [Repository Structure]
 - [System Architecture]
 - [Installation]
