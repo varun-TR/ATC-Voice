@@ -1,4 +1,4 @@
-# 🛫 CATSR (ATC Voice) Live Communications Dashboar
+# 🛫 CATSR (ATC Voice) Live Communications Dashboard
 
 ##  TABLE OF CONTENTS
 
