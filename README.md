@@ -152,6 +152,13 @@ The dashboard displays:
 <img width="1686" height="852" alt="image" src="https://github.com/user-attachments/assets/c6237e0b-2373-453b-ac32-57125d4b8adc" />
 <img width="1708" height="725" alt="image" src="https://github.com/user-attachments/assets/5b0b030f-fbcb-4e30-8f65-4abf4275c06e" />
 
+## 📈 Key Insights & Outcomes
+
+- Identified dominant communication categories during peak hours
+- Observed consistent hourly traffic patterns across datasets
+- Enabled rapid filtering and drill-down of ATC interactions
+- Created a reusable analytics framework for aviation communication analysis
+
 
 ## 📜 License
 
