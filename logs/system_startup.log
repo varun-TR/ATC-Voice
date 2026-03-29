@@ -1,0 +1,53 @@
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Atlas.py - Cleans & Categorizes (monitors transcripts.json, writes to cleaned_transcripts.json)
+3. Live Dashboard (real-time ATC communications from cleaned_transcripts.json)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 14353MB
+   Swap usage: 7%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 175768)
+⏳ Waiting for audio system to initialize...
+🧹 Starting atlas.py service (cleaner & categorizer)...
+✅ Atlas.py started (PID: 175837)
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 175926)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 175768)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🧹 Atlas.py: Cleans and categorizes transcripts.json → cleaned_transcripts.json (PID: 175837)
+🌐 Live Dashboard: Real-time monitoring (PID: 175926)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Atlas.py: logs/atlas.log
+  - Dashboard: logs/dashboard.log (if started)
+
+🛑 Press Ctrl+C to stop all services
+ℹ️  Auto-restart is DISABLED - services will NOT restart if they crash
+   Dashboard WILL auto-start with the system
+   To restart: Stop with Ctrl+C and run ./run_live_system.sh again
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+

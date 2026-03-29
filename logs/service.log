@@ -1,0 +1,2830 @@
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3734619)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3734770)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3734818)
+🔍 Checking port 8501...
+⚠️ Port 8501 is in use. Killing existing processes...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3734888)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3734619)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3734770)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3734818)
+🌐 Live Dashboard: Real-time monitoring (PID: 3734888)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3736106)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3736169)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3736214)
+🔍 Checking port 8501...
+⚠️ Port 8501 is in use. Killing existing processes...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3736286)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3736106)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3736169)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3736214)
+🌐 Live Dashboard: Real-time monitoring (PID: 3736286)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 292: 3736169 Killed                  nohup python3 src/nlp_analysis/atlas.py --live > logs/auto_processing.log 2>&1
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 292: 3736214 Killed                  nohup python3 src/nlp_analysis/auto_cleaner.py > logs/auto_cleaner.log 2>&1
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 292: 3736286 Killed                  nohup streamlit run src/dashboard/app.py --server.headless true --server.port 8501 --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false > logs/dashboard.log 2>&1
+⚠️ Audio service (PID: 3736106) has stopped unexpectedly
+⚠️ Processing service (PID: 3736169) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3736214) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3736286) has stopped unexpectedly
+⚠️ Audio service (PID: 3736106) has stopped unexpectedly
+⚠️ Processing service (PID: 3736169) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3736214) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3736286) has stopped unexpectedly
+⚠️ Audio service (PID: 3736106) has stopped unexpectedly
+⚠️ Processing service (PID: 3736169) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3736214) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3736286) has stopped unexpectedly
+⚠️ Audio service (PID: 3736106) has stopped unexpectedly
+⚠️ Processing service (PID: 3736169) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3736214) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3736286) has stopped unexpectedly
+⚠️ Audio service (PID: 3736106) has stopped unexpectedly
+⚠️ Processing service (PID: 3736169) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3736214) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3736286) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3737572)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3737662)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3737721)
+🔍 Checking port 8501...
+⚠️ Port 8501 is in use. Killing existing processes...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3737796)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3737572)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3737662)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3737721)
+🌐 Live Dashboard: Real-time monitoring (PID: 3737796)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3739284)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3739371)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3739416)
+🔍 Checking port 8501...
+⚠️ Port 8501 is in use. Killing existing processes...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3739481)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3739284)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3739371)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3739416)
+🌐 Live Dashboard: Real-time monitoring (PID: 3739481)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 292: 3739371 Killed                  nohup python3 src/nlp_analysis/atlas.py --live > logs/auto_processing.log 2>&1
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 292: 3739416 Killed                  nohup python3 src/nlp_analysis/auto_cleaner.py > logs/auto_cleaner.log 2>&1
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 292: 3739481 Killed                  nohup streamlit run src/dashboard/app.py --server.headless true --server.port 8501 --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false > logs/dashboard.log 2>&1
+⚠️ Audio service (PID: 3739284) has stopped unexpectedly
+⚠️ Processing service (PID: 3739371) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3739416) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3739481) has stopped unexpectedly
+⚠️ Audio service (PID: 3739284) has stopped unexpectedly
+⚠️ Processing service (PID: 3739371) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3739416) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3739481) has stopped unexpectedly
+⚠️ Audio service (PID: 3739284) has stopped unexpectedly
+⚠️ Processing service (PID: 3739371) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3739416) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3739481) has stopped unexpectedly
+⚠️ Audio service (PID: 3739284) has stopped unexpectedly
+⚠️ Processing service (PID: 3739371) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3739416) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3739481) has stopped unexpectedly
+⚠️ Audio service (PID: 3739284) has stopped unexpectedly
+⚠️ Processing service (PID: 3739371) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3739416) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3739481) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3740533)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3740651)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3740697)
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3740733)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 176: 3740733 Killed                  nohup streamlit run src/dashboard/app.py --server.headless true --server.port 8501 --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false > logs/dashboard.log 2>&1
+❌ Dashboard failed to start. Checking logs...
+Last 10 lines of dashboard log:
+
+Collecting usage statistics. To deactivate, set browser.gatherUsageStats to false.
+
+
+  You can now view your Streamlit app in your browser.
+
+  URL: http://0.0.0.0:8501
+
+
+Trying to start dashboard on alternative port...
+✅ Dashboard started on port 8502 (PID: 3740842)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8502
+   - Network: http://172.16.12.79:8502
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3740533)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3740651)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3740697)
+🌐 Live Dashboard: Real-time monitoring (PID: 3740842)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3740533) has stopped unexpectedly
+⚠️ Audio service (PID: 3740533) has stopped unexpectedly
+⚠️ Audio service (PID: 3740533) has stopped unexpectedly
+⚠️ Audio service (PID: 3740533) has stopped unexpectedly
+⚠️ Audio service (PID: 3740533) has stopped unexpectedly
+⚠️ Audio service (PID: 3740533) has stopped unexpectedly
+⚠️ Audio service (PID: 3740533) has stopped unexpectedly
+⚠️ Audio service (PID: 3740533) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3742254) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3742312) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3742342) with 512MB memory limit
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 147: 3742312 Killed                  nohup prlimit --as=1073741824 --cpu=300 python3 src/nlp_analysis/atlas.py --live > logs/auto_processing.log 2>&1
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 147: 3742342 Killed                  nohup prlimit --as=536870912 --cpu=300 python3 src/nlp_analysis/auto_cleaner.py > logs/auto_cleaner.log 2>&1
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3742377) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3742254)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3742312)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3742342)
+🌐 Live Dashboard: Real-time monitoring (PID: 3742377)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3742254) has stopped unexpectedly
+⚠️ Processing service (PID: 3742312) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3742342) has stopped unexpectedly
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 293: 3742377 Killed                  nohup prlimit --as=1073741824 --cpu=300 streamlit run src/dashboard/app.py --server.headless true --server.port 8501 --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false > logs/dashboard.log 2>&1
+⚠️ Audio service (PID: 3742254) has stopped unexpectedly
+⚠️ Processing service (PID: 3742312) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3742342) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3742377) has stopped unexpectedly
+⚠️ Audio service (PID: 3742254) has stopped unexpectedly
+⚠️ Processing service (PID: 3742312) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3742342) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3742377) has stopped unexpectedly
+⚠️ Audio service (PID: 3742254) has stopped unexpectedly
+⚠️ Processing service (PID: 3742312) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3742342) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3742377) has stopped unexpectedly
+⚠️ Audio service (PID: 3742254) has stopped unexpectedly
+⚠️ Processing service (PID: 3742312) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3742342) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3742377) has stopped unexpectedly
+⚠️ Audio service (PID: 3742254) has stopped unexpectedly
+⚠️ Processing service (PID: 3742312) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3742342) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3742377) has stopped unexpectedly
+⚠️ Audio service (PID: 3742254) has stopped unexpectedly
+⚠️ Processing service (PID: 3742312) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3742342) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3742377) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3743544) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3743592) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3743642) with 512MB memory limit
+🔍 Checking port 8501...
+⚠️ Port 8501 is in use. Killing existing processes...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3743691) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3743544)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3743592)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3743642)
+🌐 Live Dashboard: Real-time monitoring (PID: 3743691)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3743544) has stopped unexpectedly
+⚠️ Audio service (PID: 3743544) has stopped unexpectedly
+⚠️ Audio service (PID: 3743544) has stopped unexpectedly
+⚠️ Audio service (PID: 3743544) has stopped unexpectedly
+⚠️ Audio service (PID: 3743544) has stopped unexpectedly
+⚠️ Audio service (PID: 3743544) has stopped unexpectedly
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 293: 3743691 Killed                  nohup prlimit --as=1073741824 --cpu=3600 streamlit run src/dashboard/app.py --server.headless true --server.port 8501 --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false > logs/dashboard.log 2>&1
+⚠️ Audio service (PID: 3743544) has stopped unexpectedly
+⚠️ Processing service (PID: 3743592) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3743642) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3743691) has stopped unexpectedly
+⚠️ Audio service (PID: 3743544) has stopped unexpectedly
+⚠️ Processing service (PID: 3743592) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3743642) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3743691) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3744719) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3744762) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3744798) with 512MB memory limit
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3744830) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3744719)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3744762)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3744798)
+🌐 Live Dashboard: Real-time monitoring (PID: 3744830)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3744719) has stopped unexpectedly
+⚠️ Audio service (PID: 3744719) has stopped unexpectedly
+⚠️ Audio service (PID: 3744719) has stopped unexpectedly
+⚠️ Audio service (PID: 3744719) has stopped unexpectedly
+⚠️ Audio service (PID: 3744719) has stopped unexpectedly
+⚠️ Audio service (PID: 3744719) has stopped unexpectedly
+⚠️ Audio service (PID: 3744719) has stopped unexpectedly
+⚠️ Audio service (PID: 3744719) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3745804) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3745906) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3745960) with 512MB memory limit
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3745988) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3745804)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3745906)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3745960)
+🌐 Live Dashboard: Real-time monitoring (PID: 3745988)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3745804) has stopped unexpectedly
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 293: 3745988 Killed                  nohup prlimit --as=1073741824 --cpu=3600 streamlit run src/dashboard/app.py --server.headless true --server.port 8501 --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false > logs/dashboard.log 2>&1
+⚠️ Audio service (PID: 3745804) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3745988) has stopped unexpectedly
+⚠️ Audio service (PID: 3745804) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3745988) has stopped unexpectedly
+⚠️ Audio service (PID: 3745804) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3745988) has stopped unexpectedly
+⚠️ Audio service (PID: 3745804) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3745988) has stopped unexpectedly
+⚠️ Audio service (PID: 3745804) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3745988) has stopped unexpectedly
+⚠️ Audio service (PID: 3745804) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3745988) has stopped unexpectedly
+⚠️ Audio service (PID: 3745804) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3745988) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3747306) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3747372) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3747407) with 512MB memory limit
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3747512) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3747306)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3747372)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3747407)
+🌐 Live Dashboard: Real-time monitoring (PID: 3747512)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3747306) has stopped unexpectedly
+⚠️ Audio service (PID: 3747306) has stopped unexpectedly
+⚠️ Audio service (PID: 3747306) has stopped unexpectedly
+⚠️ Audio service (PID: 3747306) has stopped unexpectedly
+⚠️ Audio service (PID: 3747306) has stopped unexpectedly
+⚠️ Audio service (PID: 3747306) has stopped unexpectedly
+⚠️ Audio service (PID: 3747306) has stopped unexpectedly
+⚠️ Audio service (PID: 3747306) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3749014) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3749091) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3749152) with 512MB memory limit
+🔍 Checking port 8501...
+⚠️ Port 8501 is in use. Killing existing processes...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3749236) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3749014)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3749091)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3749152)
+🌐 Live Dashboard: Real-time monitoring (PID: 3749236)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3749014) has stopped unexpectedly
+⚠️ Audio service (PID: 3749014) has stopped unexpectedly
+⚠️ Audio service (PID: 3749014) has stopped unexpectedly
+⚠️ Audio service (PID: 3749014) has stopped unexpectedly
+⚠️ Audio service (PID: 3749014) has stopped unexpectedly
+⚠️ Audio service (PID: 3749014) has stopped unexpectedly
+⚠️ Audio service (PID: 3749014) has stopped unexpectedly
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 293: 3749152 Killed                  nohup prlimit --as=536870912 --cpu=3600 python3 src/nlp_analysis/auto_cleaner.py > logs/auto_cleaner.log 2>&1
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 293: 3749236 Killed                  nohup prlimit --as=1073741824 --cpu=3600 streamlit run src/dashboard/app.py --server.headless true --server.port 8501 --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false > logs/dashboard.log 2>&1
+⚠️ Audio service (PID: 3749014) has stopped unexpectedly
+⚠️ Processing service (PID: 3749091) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3749152) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3749236) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3750671) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3750751) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3750779) with 512MB memory limit
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3750804) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3750671)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3750751)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3750779)
+🌐 Live Dashboard: Real-time monitoring (PID: 3750804)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3750671) has stopped unexpectedly
+⚠️ Audio service (PID: 3750671) has stopped unexpectedly
+⚠️ Audio service (PID: 3750671) has stopped unexpectedly
+⚠️ Audio service (PID: 3750671) has stopped unexpectedly
+⚠️ Audio service (PID: 3750671) has stopped unexpectedly
+⚠️ Audio service (PID: 3750671) has stopped unexpectedly
+⚠️ Audio service (PID: 3750671) has stopped unexpectedly
+⚠️ Audio service (PID: 3750671) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3751992) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3752064) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3752089) with 512MB memory limit
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3752119) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3751992)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3752064)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3752089)
+🌐 Live Dashboard: Real-time monitoring (PID: 3752119)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3751992) has stopped unexpectedly
+⚠️ Audio service (PID: 3751992) has stopped unexpectedly
+⚠️ Audio service (PID: 3751992) has stopped unexpectedly
+⚠️ Audio service (PID: 3751992) has stopped unexpectedly
+⚠️ Audio service (PID: 3751992) has stopped unexpectedly
+⚠️ Audio service (PID: 3751992) has stopped unexpectedly
+⚠️ Audio service (PID: 3751992) has stopped unexpectedly
+⚠️ Audio service (PID: 3751992) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3753302) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3753363) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3753378) with 512MB memory limit
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3753411) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3753302)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3753363)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3753378)
+🌐 Live Dashboard: Real-time monitoring (PID: 3753411)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3753302) has stopped unexpectedly
+⚠️ Audio service (PID: 3753302) has stopped unexpectedly
+⚠️ Audio service (PID: 3753302) has stopped unexpectedly
+⚠️ Audio service (PID: 3753302) has stopped unexpectedly
+⚠️ Audio service (PID: 3753302) has stopped unexpectedly
+⚠️ Audio service (PID: 3753302) has stopped unexpectedly
+⚠️ Audio service (PID: 3753302) has stopped unexpectedly
+⚠️ Audio service (PID: 3753302) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3754306) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3754358) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3754378) with 512MB memory limit
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3754411) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3754306)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3754358)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3754378)
+🌐 Live Dashboard: Real-time monitoring (PID: 3754411)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3754306) has stopped unexpectedly
+⚠️ Audio service (PID: 3754306) has stopped unexpectedly
+⚠️ Audio service (PID: 3754306) has stopped unexpectedly
+⚠️ Audio service (PID: 3754306) has stopped unexpectedly
+⚠️ Audio service (PID: 3754306) has stopped unexpectedly
+⚠️ Audio service (PID: 3754306) has stopped unexpectedly
+⚠️ Audio service (PID: 3754306) has stopped unexpectedly
+⚠️ Audio service (PID: 3754306) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3755361) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3755411) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3755446) with 512MB memory limit
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3755476) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3755361)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3755411)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3755446)
+🌐 Live Dashboard: Real-time monitoring (PID: 3755476)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3755361) has stopped unexpectedly
+⚠️ Audio service (PID: 3755361) has stopped unexpectedly
+⚠️ Audio service (PID: 3755361) has stopped unexpectedly
+⚠️ Audio service (PID: 3755361) has stopped unexpectedly
+⚠️ Audio service (PID: 3755361) has stopped unexpectedly
+⚠️ Audio service (PID: 3755361) has stopped unexpectedly
+⚠️ Audio service (PID: 3755361) has stopped unexpectedly
+⚠️ Audio service (PID: 3755361) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3756468) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3756525) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3756548) with 512MB memory limit
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3756578) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3756468)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3756525)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3756548)
+🌐 Live Dashboard: Real-time monitoring (PID: 3756578)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3756468) has stopped unexpectedly
+⚠️ Audio service (PID: 3756468) has stopped unexpectedly
+⚠️ Audio service (PID: 3756468) has stopped unexpectedly
+⚠️ Audio service (PID: 3756468) has stopped unexpectedly
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 293: 3756578 Killed                  nohup prlimit --as=1073741824 --cpu=3600 streamlit run src/dashboard/app.py --server.headless true --server.port 8501 --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false > logs/dashboard.log 2>&1
+⚠️ Audio service (PID: 3756468) has stopped unexpectedly
+⚠️ Processing service (PID: 3756525) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3756548) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3756578) has stopped unexpectedly
+⚠️ Audio service (PID: 3756468) has stopped unexpectedly
+⚠️ Processing service (PID: 3756525) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3756548) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3756578) has stopped unexpectedly
+⚠️ Audio service (PID: 3756468) has stopped unexpectedly
+⚠️ Processing service (PID: 3756525) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3756548) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3756578) has stopped unexpectedly
+⚠️ Audio service (PID: 3756468) has stopped unexpectedly
+⚠️ Processing service (PID: 3756525) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3756548) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3756578) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3757834) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3757900) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3757930) with 512MB memory limit
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3757967) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3757834)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3757900)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3757930)
+🌐 Live Dashboard: Real-time monitoring (PID: 3757967)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3757834) has stopped unexpectedly
+⚠️ Audio service (PID: 3757834) has stopped unexpectedly
+⚠️ Audio service (PID: 3757834) has stopped unexpectedly
+⚠️ Audio service (PID: 3757834) has stopped unexpectedly
+⚠️ Audio service (PID: 3757834) has stopped unexpectedly
+⚠️ Audio service (PID: 3757834) has stopped unexpectedly
+⚠️ Audio service (PID: 3757834) has stopped unexpectedly
+⚠️ Audio service (PID: 3757834) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3759115) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3759173) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3759216) with 512MB memory limit
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3759252) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3759115)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3759173)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3759216)
+🌐 Live Dashboard: Real-time monitoring (PID: 3759252)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3759115) has stopped unexpectedly
+⚠️ Audio service (PID: 3759115) has stopped unexpectedly
+⚠️ Audio service (PID: 3759115) has stopped unexpectedly
+⚠️ Audio service (PID: 3759115) has stopped unexpectedly
+⚠️ Audio service (PID: 3759115) has stopped unexpectedly
+⚠️ Audio service (PID: 3759115) has stopped unexpectedly
+⚠️ Audio service (PID: 3759115) has stopped unexpectedly
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 293: 3759252 Killed                  nohup prlimit --as=1073741824 --cpu=3600 streamlit run src/dashboard/app.py --server.headless true --server.port 8501 --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false > logs/dashboard.log 2>&1
+⚠️ Audio service (PID: 3759115) has stopped unexpectedly
+⚠️ Processing service (PID: 3759173) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3759216) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3759252) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3760805)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3760871)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3760905)
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3760938)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3760805)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3760871)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3760905)
+🌐 Live Dashboard: Real-time monitoring (PID: 3760938)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3762162)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3762238)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3762276)
+🔍 Checking port 8501...
+⚠️ Port 8501 is in use. Killing existing processes...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3762328)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3762162)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3762238)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3762276)
+🌐 Live Dashboard: Real-time monitoring (PID: 3762328)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 292: 3762328 Killed                  nohup streamlit run src/dashboard/app.py --server.headless true --server.port 8501 --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false > logs/dashboard.log 2>&1
+⚠️ Audio service (PID: 3762162) has stopped unexpectedly
+⚠️ Processing service (PID: 3762238) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3762276) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3762328) has stopped unexpectedly
+⚠️ Audio service (PID: 3762162) has stopped unexpectedly
+⚠️ Processing service (PID: 3762238) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3762276) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3762328) has stopped unexpectedly
+⚠️ Audio service (PID: 3762162) has stopped unexpectedly
+⚠️ Processing service (PID: 3762238) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3762276) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3762328) has stopped unexpectedly
+⚠️ Audio service (PID: 3762162) has stopped unexpectedly
+⚠️ Processing service (PID: 3762238) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3762276) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3762328) has stopped unexpectedly
+⚠️ Audio service (PID: 3762162) has stopped unexpectedly
+⚠️ Processing service (PID: 3762238) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3762276) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3762328) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3763726) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3763830) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3763881) with 512MB memory limit
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3763916) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3763726)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3763830)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3763881)
+🌐 Live Dashboard: Real-time monitoring (PID: 3763916)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3763726) has stopped unexpectedly
+⚠️ Audio service (PID: 3763726) has stopped unexpectedly
+⚠️ Audio service (PID: 3763726) has stopped unexpectedly
+⚠️ Audio service (PID: 3763726) has stopped unexpectedly
+⚠️ Audio service (PID: 3763726) has stopped unexpectedly
+⚠️ Audio service (PID: 3763726) has stopped unexpectedly
+⚠️ Audio service (PID: 3763726) has stopped unexpectedly
+⚠️ Audio service (PID: 3763726) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3765587) with 4GB memory limit
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3765699) with 1GB memory limit
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3765747) with 512MB memory limit
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3765774) with 1GB memory limit
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3765587)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3765699)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3765747)
+🌐 Live Dashboard: Real-time monitoring (PID: 3765774)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3765587) has stopped unexpectedly
+⚠️ Audio service (PID: 3765587) has stopped unexpectedly
+⚠️ Audio service (PID: 3765587) has stopped unexpectedly
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 293: 3765774 Killed                  nohup prlimit --as=1073741824 --cpu=3600 streamlit run src/dashboard/app.py --server.headless true --server.port 8501 --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false > logs/dashboard.log 2>&1
+⚠️ Audio service (PID: 3765587) has stopped unexpectedly
+⚠️ Processing service (PID: 3765699) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3765747) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3765774) has stopped unexpectedly
+⚠️ Audio service (PID: 3765587) has stopped unexpectedly
+⚠️ Processing service (PID: 3765699) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3765747) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3765774) has stopped unexpectedly
+⚠️ Audio service (PID: 3765587) has stopped unexpectedly
+⚠️ Processing service (PID: 3765699) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3765747) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3765774) has stopped unexpectedly
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3767292)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3767380)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3767430)
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3767482)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3767292)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3767380)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3767430)
+🌐 Live Dashboard: Real-time monitoring (PID: 3767482)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3768837)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3768906)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3768945)
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3768986)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3768837)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3768906)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3768945)
+🌐 Live Dashboard: Real-time monitoring (PID: 3768986)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3770568)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3770661)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3770703)
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3770786)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3770568)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3770661)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3770703)
+🌐 Live Dashboard: Real-time monitoring (PID: 3770786)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 10482MB
+   Swap usage: 70%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3772069)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3772141)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3772200)
+🔍 Starting memory monitor...
+✅ Memory monitor started (PID: 3772225)
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3772237)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3772069)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3772141)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3772200)
+🔍 Memory Monitor: Tracking system resources (PID: 3772225)
+🌐 Live Dashboard: Real-time monitoring (PID: 3772237)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Memory Monitor: logs/memory_monitor.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Audio service (PID: 3772069) has stopped unexpectedly
+⚠️ Processing service (PID: 3772141) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3772200) has stopped unexpectedly
+⚠️ Dashboard service (PID: 3772237) has stopped unexpectedly
+
+🔄 Attempting automatic restart (1/3)...
+   Waiting 30 seconds for system to stabilize...
+   🎙️ Restarting audio service...
+   ✅ Audio service restarted (PID: 3773327)
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 10139MB
+   Swap usage: 48%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3773606)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3773675)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3773700)
+🔍 Starting memory monitor...
+✅ Memory monitor started (PID: 3773736)
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3773760)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3773606)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3773675)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3773700)
+🔍 Memory Monitor: Tracking system resources (PID: 3773736)
+🌐 Live Dashboard: Real-time monitoring (PID: 3773760)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Memory Monitor: logs/memory_monitor.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️ Dashboard service (PID: 3773760) has stopped unexpectedly
+
+🔄 Attempting automatic restart (1/3)...
+   Waiting 30 seconds for system to stabilize...
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 10324MB
+   Swap usage: 48%
+🧹 Cleaning up any existing processes...
+Terminated
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3775121)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3775225)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3775257)
+🔍 Starting memory monitor...
+✅ Memory monitor started (PID: 3775321)
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3775344)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3775121)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3775225)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3775257)
+🔍 Memory Monitor: Tracking system resources (PID: 3775321)
+🌐 Live Dashboard: Real-time monitoring (PID: 3775344)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Memory Monitor: logs/memory_monitor.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 5218MB
+   Swap usage: 72%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3776616)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3776719)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3776769)
+🔍 Starting memory monitor...
+✅ Memory monitor started (PID: 3776796)
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3776811)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3776616)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3776719)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3776769)
+🔍 Memory Monitor: Tracking system resources (PID: 3776796)
+🌐 Live Dashboard: Real-time monitoring (PID: 3776811)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Memory Monitor: logs/memory_monitor.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️  WARNING: Low memory detected!
+   Available: 2828MB, Swap used: 94%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 1326MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 1727MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4321MB, Swap used: 99%
+   Running garbage collection...
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 11196MB
+   Swap usage: 99%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3778328)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3778397)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3778424)
+🔍 Starting memory monitor...
+✅ Memory monitor started (PID: 3778445)
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3778468)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3778328)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3778397)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3778424)
+🔍 Memory Monitor: Tracking system resources (PID: 3778445)
+🌐 Live Dashboard: Real-time monitoring (PID: 3778468)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Memory Monitor: logs/memory_monitor.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️  WARNING: Low memory detected!
+   Available: 10853MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 10809MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 9905MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 9169MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 8138MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 6910MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 5648MB, Swap used: 99%
+   Running garbage collection...
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 10737MB
+   Swap usage: 99%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3779668)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3779742)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3779791)
+🔍 Starting memory monitor...
+✅ Memory monitor started (PID: 3779830)
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3779844)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3779668)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3779742)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3779791)
+🔍 Memory Monitor: Tracking system resources (PID: 3779830)
+🌐 Live Dashboard: Real-time monitoring (PID: 3779844)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Memory Monitor: logs/memory_monitor.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️  WARNING: Low memory detected!
+   Available: 4728MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 3170MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 2068MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4545MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 2196MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4228MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4387MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4513MB, Swap used: 99%
+   Running garbage collection...
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 11350MB
+   Swap usage: 99%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3781186)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3781253)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3781329)
+🔍 Starting memory monitor...
+✅ Memory monitor started (PID: 3781365)
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3781395)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3781186)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3781253)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3781329)
+🔍 Memory Monitor: Tracking system resources (PID: 3781365)
+🌐 Live Dashboard: Real-time monitoring (PID: 3781395)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Memory Monitor: logs/memory_monitor.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️  WARNING: Low memory detected!
+   Available: 11110MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 10748MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 10597MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 10448MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 9480MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 8490MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 7234MB, Swap used: 99%
+   Running garbage collection...
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 11228MB
+   Swap usage: 99%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3782664)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3782749)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3782781)
+🔍 Starting memory monitor...
+✅ Memory monitor started (PID: 3782822)
+🔍 Checking port 8501...
+🌐 Starting live dashboard...
+✅ Dashboard started (PID: 3782852)
+📱 Dashboard accessible at:
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+
+⏳ Waiting for dashboard to initialize...
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3782664)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3782749)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3782781)
+🔍 Memory Monitor: Tracking system resources (PID: 3782822)
+🌐 Live Dashboard: Real-time monitoring (PID: 3782852)
+   - Local: http://localhost:8501
+   - Network: http://172.16.12.79:8501
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Memory Monitor: logs/memory_monitor.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️  WARNING: Low memory detected!
+   Available: 6073MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4405MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4341MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4392MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4368MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4166MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4033MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 1558MB, Swap used: 99%
+   Running garbage collection...
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 10697MB
+   Swap usage: 99%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3784224)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3784289)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3784316)
+🔍 Starting memory monitor...
+✅ Memory monitor started (PID: 3784386)
+⏭️  Dashboard auto-start disabled (manual control enabled)
+   To start dashboard: ./start_dashboard.sh
+
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3784224)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3784289)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3784316)
+🔍 Memory Monitor: Tracking system resources (PID: 3784386)
+📊 Live Dashboard: Manual control enabled
+   - Start with: ./start_dashboard.sh
+   - Will NOT auto-restart if stopped
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Memory Monitor: logs/memory_monitor.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+   (Dashboard excluded - manual control only)
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️  WARNING: Low memory detected!
+   Available: 11053MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 11098MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 11100MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 11122MB, Swap used: 99%
+   Running garbage collection...
+⚠️ Audio service (PID: 3784224) has stopped unexpectedly
+⚠️ Processing service (PID: 3784289) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3784316) has stopped unexpectedly
+
+🔄 Attempting automatic restart (1/3)...
+   Waiting 30 seconds for system to stabilize...
+   🎙️ Restarting audio service...
+   ✅ Audio service restarted (PID: 3785428)
+   🔄 Restarting processing service...
+   ✅ Processing service restarted (PID: 3785518)
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 10959MB
+   Swap usage: 99%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3785793)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3785869)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3785917)
+🔍 Starting memory monitor...
+✅ Memory monitor started (PID: 3786000)
+⏭️  Dashboard auto-start disabled (manual control enabled)
+   To start dashboard: ./start_dashboard.sh
+
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3785793)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3785869)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3785917)
+🔍 Memory Monitor: Tracking system resources (PID: 3786000)
+📊 Live Dashboard: Manual control enabled
+   - Start with: ./start_dashboard.sh
+   - Will NOT auto-restart if stopped
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Memory Monitor: logs/memory_monitor.log
+  - Dashboard: logs/dashboard.log
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+   (Dashboard excluded - manual control only)
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️  WARNING: Low memory detected!
+   Available: 7767MB, Swap used: 99%
+   Running garbage collection...
+/home/atc_voice/ATC-Voice/run_live_system.sh: line 413: 3786000 Killed                  nohup python3 monitor_memory.py > logs/memory_monitor.log 2>&1
+⚠️  WARNING: Low memory detected!
+   Available: 6940MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 5885MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 5206MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4943MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4922MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 3951MB, Swap used: 100%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 2343MB, Swap used: 99%
+   Running garbage collection...
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 10859MB
+   Swap usage: 99%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3787546)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3787662)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3787714)
+⏭️  Dashboard auto-start disabled (manual control enabled)
+   To start dashboard: ./start_dashboard.sh
+
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3787546)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3787662)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3787714)
+📊 Live Dashboard: Manual control enabled
+   - Start with: ./start_dashboard.sh
+   - Will NOT auto-restart if stopped
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log (if started)
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+   (Dashboard excluded - manual control only)
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️  WARNING: Low memory detected!
+   Available: 10556MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 10590MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 10630MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 10506MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 10959MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 8189MB, Swap used: 99%
+   Running garbage collection...
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 10976MB
+   Swap usage: 99%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3788753)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3788834)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3788877)
+⏭️  Dashboard auto-start disabled (manual control enabled)
+   To start dashboard: ./start_dashboard.sh
+
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3788753)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3788834)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3788877)
+📊 Live Dashboard: Manual control enabled
+   - Start with: ./start_dashboard.sh
+   - Will NOT auto-restart if stopped
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log (if started)
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+   (Dashboard excluded - manual control only)
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️  WARNING: Low memory detected!
+   Available: 7901MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 7189MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 6525MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 5371MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4672MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4653MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4660MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4555MB, Swap used: 98%
+   Running garbage collection...
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 10461MB
+   Swap usage: 97%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3790228)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3790301)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3790337)
+⏭️  Dashboard auto-start disabled (manual control enabled)
+   To start dashboard: ./start_dashboard.sh
+
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3790228)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3790301)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3790337)
+📊 Live Dashboard: Manual control enabled
+   - Start with: ./start_dashboard.sh
+   - Will NOT auto-restart if stopped
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log (if started)
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+   (Dashboard excluded - manual control only)
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️  WARNING: Low memory detected!
+   Available: 4799MB, Swap used: 96%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 3745MB, Swap used: 97%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 2428MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 2321MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 2349MB, Swap used: 99%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4335MB, Swap used: 98%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4149MB, Swap used: 96%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 3313MB, Swap used: 87%
+   Running garbage collection...
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 10448MB
+   Swap usage: 86%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3791800)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3791846)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3791895)
+⏭️  Dashboard auto-start disabled (manual control enabled)
+   To start dashboard: ./start_dashboard.sh
+
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3791800)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3791846)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3791895)
+📊 Live Dashboard: Manual control enabled
+   - Start with: ./start_dashboard.sh
+   - Will NOT auto-restart if stopped
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log (if started)
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+   (Dashboard excluded - manual control only)
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️  WARNING: Low memory detected!
+   Available: 10238MB, Swap used: 86%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 10751MB, Swap used: 86%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 10679MB, Swap used: 86%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 7961MB, Swap used: 86%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 6858MB, Swap used: 86%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 10711MB, Swap used: 86%
+   Running garbage collection...
+⚠️ Audio service (PID: 3791800) has stopped unexpectedly
+⚠️ Processing service (PID: 3791846) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3791895) has stopped unexpectedly
+
+🔄 Attempting automatic restart (1/3)...
+   Waiting 30 seconds for system to stabilize...
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 10869MB
+   Swap usage: 86%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3793341)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3793395)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3793462)
+⏭️  Dashboard auto-start disabled (manual control enabled)
+   To start dashboard: ./start_dashboard.sh
+
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3793341)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3793395)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3793462)
+📊 Live Dashboard: Manual control enabled
+   - Start with: ./start_dashboard.sh
+   - Will NOT auto-restart if stopped
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log (if started)
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+   (Dashboard excluded - manual control only)
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️  WARNING: Low memory detected!
+   Available: 6415MB, Swap used: 86%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 5144MB, Swap used: 86%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4281MB, Swap used: 86%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4105MB, Swap used: 90%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 4094MB, Swap used: 90%
+   Running garbage collection...
+⚠️  WARNING: Low memory detected!
+   Available: 10565MB, Swap used: 93%
+   Running garbage collection...
+⚠️ Audio service (PID: 3793341) has stopped unexpectedly
+⚠️ Processing service (PID: 3793395) has stopped unexpectedly
+⚠️ Auto-cleaner (PID: 3793462) has stopped unexpectedly
+
+🔄 Attempting automatic restart (1/3)...
+   Waiting 30 seconds for system to stabilize...
+🛫 Starting ATC Voice Complete Live System...
+=============================================
+Activating virtual environment...
+🔍 Checking system dependencies...
+📁 Creating directories...
+
+🚀 Starting Complete Live System:
+1. Audio Recording & ATC Transcription (all_in_one.py)
+2. Automatic Processing (monitors transcripts.json for new chunks)
+3. Live Dashboard (real-time ATC communications and categorized transcriptions)
+
+🔍 Checking required files...
+✅ All required files present
+🔍 Checking system memory...
+   Available memory: 10624MB
+   Swap usage: 93%
+🧹 Cleaning up any existing processes...
+✅ Cleanup complete
+🎙️ Starting audio recording and transcription system...
+✅ Audio system started (PID: 3794854)
+⏳ Waiting for audio system to initialize...
+🔄 Starting automatic processing service...
+✅ Automatic processing started (PID: 3794915)
+⏳ Waiting for processing service to initialize...
+🧹 Starting auto-cleaner service...
+✅ Auto-cleaner started (PID: 3794993)
+⏭️  Dashboard auto-start disabled (manual control enabled)
+   To start dashboard: ./start_dashboard.sh
+
+🎉 Complete Live System Active:
+================================
+🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: 3794854)
+📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)
+🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: 3794915)
+🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: 3794993)
+📊 Live Dashboard: Manual control enabled
+   - Start with: ./start_dashboard.sh
+   - Will NOT auto-restart if stopped
+📊 Communications: LiveATC stream → atc_communications.txt
+
+📋 Log Files:
+  - Audio Recording: logs/audio_recording.log
+  - Auto Processing: logs/auto_processing.log
+  - Auto Cleaner: logs/auto_cleaner.log
+  - Dashboard: logs/dashboard.log (if started)
+
+🛑 Press Ctrl+C to stop all services
+⚠️  System will auto-restart services up to 3 times if they crash
+   (Dashboard excluded - manual control only)
+
+🔄 System monitoring active. Press Ctrl+C to stop all services.
+
+⚠️  WARNING: Low memory detected!
+   Available: 10513MB, Swap used: 93%
+   Running garbage collection...

@@ -45,8 +45,8 @@ mkdir -p src/data/raw
 echo ""
 echo "🚀 Starting Complete Live System:"
 echo "1. Audio Recording & ATC Transcription (all_in_one.py)"
-echo "2. Automatic Processing (monitors transcripts.json for new chunks)"
-echo "3. Live Dashboard (real-time ATC communications and categorized transcriptions)"
+echo "2. Atlas.py - Cleans & Categorizes (monitors transcripts.json, writes to cleaned_transcripts.json)"
+echo "3. Live Dashboard (real-time ATC communications from cleaned_transcripts.json)"
 echo ""
 
 # Check if required files exist
@@ -83,9 +83,6 @@ cleanup_existing_processes() {
     # Kill any existing atlas.py processes
     pkill -f "python.*atlas.py" 2>/dev/null || true
     
-    # Kill any existing auto_cleaner.py processes
-    pkill -f "python.*auto_cleaner.py" 2>/dev/null || true
-    
     # Kill any existing live_postprocessor.py processes
     pkill -f "python.*live_postprocessor.py" 2>/dev/null || true
     
@@ -103,9 +100,36 @@ cleanup_existing_processes() {
 
 # Initialize PIDs
 AUDIO_PID=""
-PROCESSING_PID=""
 CLEANER_PID=""
 DASHBOARD_PID=""
+MEMORY_MONITOR_PID=""
+
+# Check available memory before starting
+echo "🔍 Checking system memory..."
+available_mem=$(free -m | awk 'NR==2{print $7}')
+swap_percent=$(free | awk 'NR==3{if ($2>0) print int($3/$2*100); else print 0}')
+echo "   Available memory: ${available_mem}MB"
+echo "   Swap usage: ${swap_percent}%"
+
+if [ "$available_mem" -lt 1024 ]; then
+    echo "⚠️  WARNING: Available memory is low (< 1GB)"
+    echo "   System may experience OOM issues"
+    echo "   Consider:"
+    echo "   - Closing other applications"
+    echo "   - Adding more swap space"
+    echo "   - Upgrading system RAM"
+    echo ""
+    # Skip interactive prompt if running in background (non-interactive)
+    if [ -t 0 ]; then
+    read -p "Continue anyway? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+        fi
+    else
+        echo "⚠️  Non-interactive mode: Continuing automatically..."
+    fi
+fi
 
 # Clean up any existing processes
 cleanup_existing_processes
@@ -126,24 +150,29 @@ if [ ! -z "$AUDIO_PID" ]; then
     sleep 5
 fi
 
-# Start automatic processing service in background (using atlas.py in live mode)
-echo "🔄 Starting automatic processing service..."
-nohup python3 src/nlp_analysis/atlas.py --live > logs/auto_processing.log 2>&1 &
-PROCESSING_PID=$!
-echo "✅ Automatic processing started (PID: $PROCESSING_PID)"
-
-# Wait a moment for processing to initialize
-echo "⏳ Waiting for processing service to initialize..."
-sleep 3
-
-# Start auto-cleaner service in background
-echo "🧹 Starting auto-cleaner service..."
-nohup python3 src/nlp_analysis/auto_cleaner.py > logs/auto_cleaner.log 2>&1 &
+# Start atlas.py service in background (cleans and categorizes transcripts)
+echo "🧹 Starting atlas.py service (cleaner & categorizer)..."
+nohup python3 src/nlp_analysis/atlas.py > logs/atlas.log 2>&1 &
 CLEANER_PID=$!
-echo "✅ Auto-cleaner started (PID: $CLEANER_PID)"
+echo "✅ Atlas.py started (PID: $CLEANER_PID)"
 
 # Wait a moment for cleaner to initialize
 sleep 2
+
+# Memory monitor disabled (user preference)
+MEMORY_MONITOR_PID=""
+# # Uncomment to enable memory monitor
+# echo "🔍 Starting memory monitor..."
+# if [ -f "monitor_memory.py" ]; then
+#     nohup python3 monitor_memory.py > logs/memory_monitor.log 2>&1 &
+#     MEMORY_MONITOR_PID=$!
+#     echo "✅ Memory monitor started (PID: $MEMORY_MONITOR_PID)"
+# else
+#     echo "⚠️ Memory monitor script not found (monitor_memory.py)"
+# fi
+
+# Get the server's IP address
+SERVER_IP=$(hostname -I | awk '{print $1}')
 
 # Check if port 8501 is in use and kill any existing processes
 echo "🔍 Checking port 8501..."
@@ -152,9 +181,6 @@ if lsof -i :8501 >/dev/null 2>&1; then
     lsof -ti :8501 | xargs kill -9 2>/dev/null || true
     sleep 2
 fi
-
-# Get the server's IP address
-SERVER_IP=$(hostname -I | awk '{print $1}')
 
 # Start dashboard in background with external access enabled
 echo "🌐 Starting live dashboard..."
@@ -171,7 +197,7 @@ echo "   - Local: http://localhost:8501"
 echo "   - Network: http://${SERVER_IP}:8501"
 echo ""
 
-# Wait a moment for dashboard to initialize and verify it's running
+# Wait a moment for dashboard to initialize
 echo "⏳ Waiting for dashboard to initialize..."
 sleep 5
 
@@ -202,35 +228,34 @@ if [ ! -z "$AUDIO_PID" ]; then
     echo "🎙️ Audio Recording: LiveATC stream → src/data/raw/ (PID: $AUDIO_PID)"
     echo "📝 ATC Transcription: Audio files → transcripts.json (ATC-specialized model)"
 fi
-echo "🔄 Automatic Processing: transcripts.json → categorized_transcription_results.json (PID: $PROCESSING_PID)"
 if [ ! -z "$CLEANER_PID" ]; then
-    echo "🧹 Auto-Cleaner: Continuously removes 'thank you' and © text (PID: $CLEANER_PID)"
+    echo "🧹 Atlas.py: Cleans and categorizes transcripts.json → cleaned_transcripts.json (PID: $CLEANER_PID)"
 fi
-if [ ! -z "$DASHBOARD_PID" ]; then
-    if kill -0 $DASHBOARD_PID 2>/dev/null; then
-        # Check which port the dashboard is actually using
-        DASHBOARD_PORT=$(lsof -p $DASHBOARD_PID | grep LISTEN | awk '{print $9}' | cut -d: -f2 | head -1)
-        if [ -z "$DASHBOARD_PORT" ]; then
-            DASHBOARD_PORT="8501"
-        fi
-        echo "🌐 Live Dashboard: Real-time monitoring (PID: $DASHBOARD_PID)"
-        echo "   - Local: http://localhost:$DASHBOARD_PORT"
-        echo "   - Network: http://${SERVER_IP}:$DASHBOARD_PORT"
-    else
-        echo "❌ Live Dashboard: Failed to start"
+if [ ! -z "$DASHBOARD_PID" ] && kill -0 $DASHBOARD_PID 2>/dev/null; then
+    # Check which port the dashboard is actually using
+    DASHBOARD_PORT=$(lsof -p $DASHBOARD_PID | grep LISTEN | awk '{print $9}' | cut -d: -f2 | head -1)
+    if [ -z "$DASHBOARD_PORT" ]; then
+        DASHBOARD_PORT="8501"
     fi
+    echo "🌐 Live Dashboard: Real-time monitoring (PID: $DASHBOARD_PID)"
+    echo "   - Local: http://localhost:$DASHBOARD_PORT"
+    echo "   - Network: http://${SERVER_IP}:$DASHBOARD_PORT"
 else
-    echo "❌ Live Dashboard: Not started"
+    echo "📊 Live Dashboard: Manual control enabled"
+    echo "   - Start with: ./start_dashboard.sh"
+    echo "   - Will NOT auto-restart if stopped"
 fi
 echo "📊 Communications: LiveATC stream → atc_communications.txt"
 echo ""
 echo "📋 Log Files:"
 echo "  - Audio Recording: logs/audio_recording.log"
-echo "  - Auto Processing: logs/auto_processing.log"
-echo "  - Auto Cleaner: logs/auto_cleaner.log"
-echo "  - Dashboard: logs/dashboard.log"
+echo "  - Atlas.py: logs/atlas.log"
+echo "  - Dashboard: logs/dashboard.log (if started)"
 echo ""
 echo "🛑 Press Ctrl+C to stop all services"
+echo "ℹ️  Auto-restart is DISABLED - services will NOT restart if they crash"
+echo "   Dashboard WILL auto-start with the system"
+echo "   To restart: Stop with Ctrl+C and run ./run_live_system.sh again"
 echo ""
 
 # Function to cleanup on exit
@@ -243,13 +268,8 @@ cleanup() {
         kill $AUDIO_PID 2>/dev/null
     fi
     
-    if [ ! -z "$PROCESSING_PID" ]; then
-        echo "  Stopping processing service (PID: $PROCESSING_PID)..."
-        kill $PROCESSING_PID 2>/dev/null
-    fi
-    
     if [ ! -z "$CLEANER_PID" ]; then
-        echo "  Stopping auto-cleaner (PID: $CLEANER_PID)..."
+        echo "  Stopping atlas.py (PID: $CLEANER_PID)..."
         kill $CLEANER_PID 2>/dev/null
     fi
     
@@ -262,6 +282,22 @@ cleanup() {
     exit 0
 }
 
+# Function to check available memory
+check_memory() {
+    # Get available memory in MB
+    available_mem=$(free -m | awk 'NR==2{print $7}')
+    swap_percent=$(free | awk 'NR==3{if ($2>0) print int($3/$2*100); else print 0}')
+    
+    if [ "$available_mem" -lt 512 ] || [ "$swap_percent" -gt 80 ]; then
+        echo "⚠️  WARNING: Low memory detected!"
+        echo "   Available: ${available_mem}MB, Swap used: ${swap_percent}%"
+        echo "   Running garbage collection..."
+        python3 -c "import gc; gc.collect()"
+        return 1
+    fi
+    return 0
+}
+
 # Set trap to cleanup on Ctrl+C
 trap cleanup SIGINT
 
@@ -269,24 +305,24 @@ trap cleanup SIGINT
 echo "🔄 System monitoring active. Press Ctrl+C to stop all services."
 echo ""
 
-# Monitor loop
+# Monitor loop - NO AUTO-RESTART (reports only)
 while true; do
     # Check if any service has died
     if [ ! -z "$AUDIO_PID" ] && ! kill -0 $AUDIO_PID 2>/dev/null; then
         echo "⚠️ Audio service (PID: $AUDIO_PID) has stopped unexpectedly"
-    fi
-    
-    if [ ! -z "$PROCESSING_PID" ] && ! kill -0 $PROCESSING_PID 2>/dev/null; then
-        echo "⚠️ Processing service (PID: $PROCESSING_PID) has stopped unexpectedly"
+        AUDIO_PID=""
     fi
     
     if [ ! -z "$CLEANER_PID" ] && ! kill -0 $CLEANER_PID 2>/dev/null; then
-        echo "⚠️ Auto-cleaner (PID: $CLEANER_PID) has stopped unexpectedly"
+        echo "⚠️ Atlas.py (PID: $CLEANER_PID) has stopped unexpectedly"
+        CLEANER_PID=""
     fi
     
     if [ ! -z "$DASHBOARD_PID" ] && ! kill -0 $DASHBOARD_PID 2>/dev/null; then
         echo "⚠️ Dashboard service (PID: $DASHBOARD_PID) has stopped unexpectedly"
+        DASHBOARD_PID=""
     fi
     
+    # Just monitor, no auto-restart
     sleep 10
 done
